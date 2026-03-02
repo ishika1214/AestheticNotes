@@ -10,9 +10,9 @@
 
 @layer base {
   body {
-    @apply bg-stone-50 text-stone-900 transition-colors duration-300;
+    @apply bg-[#F8F3F6] text-[#3F3F3F] transition-colors duration-300;
   }
-  
+
   .dark body {
     @apply bg-stone-950 text-stone-100;
   }
@@ -27,4 +27,4 @@
 .markdown-body p { @apply mb-4 leading-relaxed; }
 .markdown-body ul { @apply list-disc pl-5 mb-4; }
 .markdown-body ol { @apply list-decimal pl-5 mb-4; }
-.markdown-body a { @apply text-indigo-600 dark:text-indigo-400 underline; }
+.markdown-body a { @apply text-[#4a2d5a] dark:text-[#7a6d8a] underline; }
