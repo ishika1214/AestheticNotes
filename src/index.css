@@ -1,20 +1,27 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Playfair Display", serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-}
-
 @layer base {
-  body {
-    @apply bg-[#F8F3F6] text-[#3F3F3F] transition-colors duration-300;
+  :root {
+    --bg: #F8F3F6;
+    --text: #3F3F3F;
+    --accent: #4a2d5a;
+    --accent-hover: #3b2148;
   }
 
-  .dark body {
-    @apply bg-stone-950 text-stone-100;
+  .dark {
+    --bg: #0c0c0c;
+    --text: #f5f5f5;
+    --accent: #7a6d8a;
+    --accent-hover: #9a8fb0;
+  }
+
+  body {
+    font-family: Inter, system-ui, sans-serif;
+    background-color: var(--bg);
+    color: var(--text);
+    @apply transition-colors duration-300;
   }
 }
 

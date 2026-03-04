@@ -28,7 +28,7 @@ export default function NoteCard({ note, viewMode, onClick, onPin }: NoteCardPro
       className={cn(
         "group relative overflow-hidden rounded-2xl border border-stone-200 dark:border-stone-800 cursor-pointer transition-all hover:shadow-xl",
         note.color,
-        viewMode === 'list' ? "flex items-center p-4 gap-4 bg-[#edd5e3]" : "flex flex-col h-full"
+        viewMode === 'list' ? "flex items-center p-4 gap-4" : "flex flex-col h-full"
       )}
     >
       {note.cover_image && viewMode === 'grid' && (
@@ -42,7 +42,7 @@ export default function NoteCard({ note, viewMode, onClick, onPin }: NoteCardPro
         </div>
       )}
 
-      <div className={cn("p-5 flex-1 flex flex-col  bg-[#edd5e3]", viewMode === 'list' && "p-0")}>
+      <div className={cn("p-5 flex-1 flex flex-col", viewMode === 'list' && "p-0")}>
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-2 overflow-hidden">
             <span className="text-xl shrink-0">{note.emoji}</span>

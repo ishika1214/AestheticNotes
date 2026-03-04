@@ -132,7 +132,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-30 bg-[#F8F3F6]/80 dark:bg-stone-950/80 backdrop-blur-md border-b border-[#EDD5E3] dark:border-stone-800 px-4 py-3">
+      <header className="sticky top-0 z-30  dark:bg-stone-950/50 backdrop-blur-md border-b border-[#EDD5E3] dark:border-stone-800 px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 flex items-center justify-center">
