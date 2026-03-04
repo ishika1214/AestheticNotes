@@ -61,10 +61,8 @@ export default function NoteCard({ note, viewMode, onClick, onPin }: NoteCardPro
         <div className={cn(
           "text-stone-600 dark:text-stone-400 text-sm line-clamp-3 mb-4 flex-1",
           viewMode === 'list' && "line-clamp-1 mb-0"
-        )}>
-          {note.content || 'No content...'}
-        </div>
-
+        )} dangerouslySetInnerHTML ={{ __html: note.content || 'No content...' }} />
+        
         <div className="flex items-center justify-between mt-auto pt-4 border-t border-black/5 dark:border-white/5">
           <div className="flex flex-wrap gap-1">
             {note.tags.slice(0, 2).map(tag => (

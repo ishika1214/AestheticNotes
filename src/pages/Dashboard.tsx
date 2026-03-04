@@ -25,10 +25,25 @@ import NoteEditor from "../components/notes/NoteEditor";
 import type { Note, NoteUpdate } from "../types";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import Logo from "../assets/aesthetic-notes-logo.png";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+const NEW_NOTE_TEMPLATE: Note = {
+  _id: "",
+  title: "",
+  content: "",
+  emoji: "📝",
+  color: "bg-white dark:bg-stone-900",
+  is_public: false,
+  is_pinned: false,
+  tags: [],
+  cover_image: null,
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
 
 export default function Dashboard() {
   const dispatch = useAppDispatch();
@@ -38,11 +53,11 @@ export default function Dashboard() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [isNewNote, setIsNewNote] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   function getInitialTheme() {
     const savedTheme = localStorage.getItem("theme");
-
     return (
       savedTheme === "dark" ||
       (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches)
@@ -54,6 +69,7 @@ export default function Dashboard() {
     dispatch(fetchNotes());
     dispatch(fetchTags());
   }, [dispatch]);
+
   const toggleTheme = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
@@ -66,32 +82,32 @@ export default function Dashboard() {
     }
   };
 
-  const handleCreateNote = async () => {
-    const newNote: NoteUpdate = {
-      title: "",
-      content: "",
-      emoji: "📝",
-      color: "bg-white dark:bg-stone-900",
-      is_public: false,
-      is_pinned: false,
-      tags: [],
-    };
-    const resultAction = await dispatch(createNote(newNote));
-    if (createNote.fulfilled.match(resultAction)) {
-      setEditingNote(resultAction.payload);
-      setIsEditorOpen(true);
-    }
+  const handleCreateNote = () => {
+    setEditingNote({ ...NEW_NOTE_TEMPLATE, updated_at: new Date().toISOString() });
+    setIsNewNote(true);
+    setIsEditorOpen(true);
   };
 
-  const handleUpdateNote = (id: string, updates: NoteUpdate) => {
-    dispatch(updateNote({ id, updates }));
+  const handleSaveNote = async (updates: NoteUpdate) => {
+    if (isNewNote) {
+      await dispatch(createNote(updates));
+      dispatch(fetchTags());
+    } else if (editingNote) {
+      dispatch(updateNote({ id: editingNote._id, updates }));
+    }
   };
 
   const handleDeleteNote = (id: string) => {
     if (confirm("Are you sure?")) {
       dispatch(deleteNote(id));
-      if (editingNote?._id === id) setIsEditorOpen(false);
+      setIsEditorOpen(false);
     }
+  };
+
+  const handleCloseEditor = () => {
+    setIsEditorOpen(false);
+    setIsNewNote(false);
+    setEditingNote(null);
   };
 
   const toggleTagFilter = (tag: string) => {
@@ -116,11 +132,11 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="sticky top-0 z-30 bg-stone-50/80 dark:bg-stone-950/80 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 px-4 py-3">
+      <header className="sticky top-0 z-30  dark:bg-stone-950/50 backdrop-blur-md border-b border-[#EDD5E3] dark:border-stone-800 px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-              <Plus className="w-6 h-6" />
+            <div className="w-10 h-10 flex items-center justify-center">
+              <img src={Logo} alt="Aesthetic Notes Logo" className="w-10 h-10" />
             </div>
             <h1 className="text-xl font-bold tracking-tight hidden sm:block">
               Aesthetic Notes
@@ -134,7 +150,7 @@ export default function Dashboard() {
               placeholder="Search notes, tags..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-stone-200/50 dark:bg-stone-800/50 border-none rounded-full focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-[#EDD5E3]/50 dark:bg-stone-800/50 border-none rounded-full focus:ring-2 focus:ring-[#4a2d5a] outline-none transition-all"
             />
           </div>
 
@@ -177,7 +193,7 @@ export default function Dashboard() {
               className={cn(
                 "px-4 py-1.5 rounded-full text-xs font-semibold transition-all",
                 selectedTags.length === 0
-                  ? "bg-indigo-600 text-white shadow-md"
+                  ? "bg-[#4a2d5a] text-white shadow-md"
                   : "bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400",
               )}
             >
@@ -190,7 +206,7 @@ export default function Dashboard() {
                 className={cn(
                   "px-4 py-1.5 rounded-full text-xs font-semibold transition-all flex items-center gap-1",
                   selectedTags.includes(tag)
-                    ? "bg-indigo-600 text-white shadow-md"
+                    ? "bg-[#4a2d5a] text-white shadow-md"
                     : "bg-stone-200 dark:bg-stone-800 text-stone-600 dark:text-stone-400",
                 )}
               >
@@ -221,10 +237,11 @@ export default function Dashboard() {
                   viewMode={viewMode}
                   onClick={() => {
                     setEditingNote(note);
+                    setIsNewNote(false);
                     setIsEditorOpen(true);
                   }}
                   onPin={() =>
-                    handleUpdateNote(note._id, { is_pinned: !note.is_pinned })
+                    dispatch(updateNote({ id: note._id, updates: { is_pinned: !note.is_pinned } }))
                   }
                 />
               ))}
@@ -253,10 +270,11 @@ export default function Dashboard() {
                 viewMode={viewMode}
                 onClick={() => {
                   setEditingNote(note);
+                  setIsNewNote(false);
                   setIsEditorOpen(true);
                 }}
                 onPin={() =>
-                  handleUpdateNote(note._id, { is_pinned: !note.is_pinned })
+                  dispatch(updateNote({ id: note._id, updates: { is_pinned: !note.is_pinned } }))
                 }
               />
             ))}
@@ -266,7 +284,7 @@ export default function Dashboard() {
 
       <button
         onClick={handleCreateNote}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95 z-40"
+        className="fixed bottom-8 right-8 w-14 h-14 bg-[#4a2d5a] hover:bg-[#3d2147] text-white rounded-full shadow-2xl flex items-center justify-center transition-transform hover:scale-110 active:scale-95 z-40"
       >
         <Plus className="w-8 h-8" />
       </button>
@@ -275,8 +293,8 @@ export default function Dashboard() {
         {isEditorOpen && editingNote && (
           <NoteEditor
             note={editingNote}
-            onClose={() => setIsEditorOpen(false)}
-            onUpdate={(updates) => handleUpdateNote(editingNote._id, updates)}
+            onClose={handleCloseEditor}
+            onUpdate={handleSaveNote}
             onDelete={() => handleDeleteNote(editingNote._id)}
           />
         )}
