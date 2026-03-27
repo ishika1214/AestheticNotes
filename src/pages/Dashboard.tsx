@@ -23,6 +23,7 @@ import {
 } from "../store/slices/noteSlice";
 import NoteCard from "../components/notes/NoteCard";
 import NoteEditor from "../components/notes/NoteEditor";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 import type { Note, NoteUpdate } from "../types";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -57,6 +58,17 @@ export default function Dashboard() {
   const [isNewNote, setIsNewNote] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   function getInitialTheme() {
     const savedTheme = localStorage.getItem("theme");
@@ -113,18 +125,28 @@ export default function Dashboard() {
   };
 
   const handleDeleteNote = (id: string) => {
-    if (confirm("Are you sure?")) {
-      dispatch(deleteNote(id));
-      setIsEditorOpen(false);
-      setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete Note",
+      message: "Are you sure you want to delete this note? This action cannot be undone.",
+      onConfirm: () => {
+        dispatch(deleteNote(id));
+        setIsEditorOpen(false);
+        setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+      },
+    });
   };
 
   const handleBulkDelete = () => {
-    if (confirm(`Delete ${selectedIds.length} notes permanently?`)) {
-      dispatch(bulkDeleteNotes(selectedIds));
-      setSelectedIds([]);
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: "Bulk Delete",
+      message: `Are you sure you want to delete ${selectedIds.length} notes permanently?`,
+      onConfirm: () => {
+        dispatch(bulkDeleteNotes(selectedIds));
+        setSelectedIds([]);
+      },
+    });
   };
 
   const toggleSelectNote = (id: string) => {
@@ -403,6 +425,14 @@ export default function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }
