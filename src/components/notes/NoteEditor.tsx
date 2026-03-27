@@ -22,13 +22,13 @@ function cn(...inputs: ClassValue[]) {
 }
 
 const COLORS = [
-  { name: "Default", value: "bg-white dark:bg-stone-900" },
-  { name: "Rose", value: "bg-rose-50 dark:bg-rose-950/30" },
-  { name: "Amber", value: "bg-amber-50 dark:bg-amber-950/30" },
-  { name: "Emerald", value: "bg-emerald-50 dark:bg-emerald-950/30" },
-  { name: "Blue", value: "bg-blue-50 dark:bg-blue-950/30" },
-  { name: "Indigo", value: "bg-indigo-50 dark:bg-indigo-950/30" },
-  { name: "Violet", value: "bg-violet-50 dark:bg-violet-950/30" },
+  { name: "Default", value: "bg-white/70 dark:bg-[#4a2d5a]/20 backdrop-blur-xl border-black/5 dark:border-white/10" },
+  { name: "Rose", value: "bg-rose-50/70 dark:bg-rose-950/30 backdrop-blur-xl border-rose-100/50 dark:border-rose-900/40" },
+  { name: "Amber", value: "bg-amber-50/70 dark:bg-amber-950/30 backdrop-blur-xl border-amber-100/50 dark:border-amber-900/40" },
+  { name: "Emerald", value: "bg-emerald-50/70 dark:bg-emerald-950/30 backdrop-blur-xl border-emerald-100/50 dark:border-emerald-900/40" },
+  { name: "Blue", value: "bg-blue-50/70 dark:bg-blue-950/30 backdrop-blur-xl border-blue-100/50 dark:border-blue-900/40" },
+  { name: "Indigo", value: "bg-indigo-50/70 dark:bg-indigo-950/30 backdrop-blur-xl border-indigo-100/50 dark:border-indigo-900/40" },
+  { name: "Violet", value: "bg-violet-50/70 dark:bg-violet-950/30 backdrop-blur-xl border-violet-100/50 dark:border-violet-900/40" },
 ];
 
 interface NoteEditorProps {
@@ -72,7 +72,26 @@ export default function NoteEditor({
     cover_image: coverUrl || null,
   });
 
+  const stripHtml = (html: string) => {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return doc.body.textContent || "";
+  };
+
   const handleSave = () => {
+    const isTitleEmpty = !title.trim();
+    const isContentEmpty = !stripHtml(content).trim();
+
+    if (isTitleEmpty && isContentEmpty) {
+      if (isNew) {
+        onClose();
+        return;
+      }
+      // If existing but now empty, we could either delete or just close
+      // The user specifically mentioned "adding", so for now we just don't save
+      onClose();
+      return;
+    }
+
     onUpdate(buildUpdates());
   };
 
@@ -103,11 +122,11 @@ export default function NoteEditor({
       }}
     >
       <motion.div
-        initial={{ scale: 0.9, y: 20 }}
+        initial={{ scale: 0.95, y: 20 }}
         animate={{ scale: 1, y: 0 }}
-        exit={{ scale: 0.9, y: 20 }}
+        exit={{ scale: 0.95, y: 20 }}
         className={cn(
-          "w-full max-w-4xl h-[85vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col relative",
+          "w-full max-w-4xl h-[90vh] rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] flex flex-col relative border border-black/5 dark:border-white/10 backdrop-blur-2xl transition-all duration-500",
           color,
         )}
       >
@@ -117,17 +136,17 @@ export default function NoteEditor({
             <button
               onClick={() => setIsPinned(!isPinned)}
               className={cn(
-                "p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors",
-                isPinned && "text-[#4a2d5a]",
+                "p-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-90",
+                isPinned && "text-[var(--accent)] bg-black/5 dark:bg-white/10",
               )}
             >
-              <Pin className="w-5 h-5" />
+              <Pin className={cn("w-5 h-5", isPinned && "fill-current")} />
             </button>
             <button
               onClick={() => setIsPublic(!isPublic)}
               className={cn(
-                "p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors",
-                isPublic && "text-[#4a2d5a]",
+                "p-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-90",
+                isPublic && "text-[var(--accent)] bg-black/5 dark:bg-white/10",
               )}
             >
               {isPublic ? (
@@ -139,12 +158,12 @@ export default function NoteEditor({
             <div className="relative">
               <button
                 onClick={() => setShowColorPicker(!showColorPicker)}
-                className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                className="p-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-90"
               >
                 <Palette className="w-5 h-5" />
               </button>
               {showColorPicker && (
-                <div className="absolute top-full left-0 mt-2 p-2 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-stone-200 dark:border-stone-700 flex gap-2 z-50">
+                <div className="absolute top-full left-0 mt-3 p-3 bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-stone-800 flex gap-2 z-50">
                   {COLORS.map((c) => (
                     <button
                       key={c.name}
@@ -153,10 +172,10 @@ export default function NoteEditor({
                         setShowColorPicker(false);
                       }}
                       className={cn(
-                        "w-8 h-8 rounded-full border border-stone-200 dark:border-stone-700",
+                        "w-9 h-9 rounded-full border border-stone-200 dark:border-stone-800 transition-all hover:scale-110",
                         c.value,
                         color === c.value &&
-                          "ring-2 ring-[#4a2d5a] ring-offset-2",
+                          "ring-2 ring-[var(--accent)] ring-offset-2 dark:ring-offset-black",
                       )}
                     />
                   ))}
@@ -166,14 +185,14 @@ export default function NoteEditor({
             <div className="relative">
               <button
                 onClick={() => setShowCoverInput(!showCoverInput)}
-                className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                className="p-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-90"
                 title="Set Cover Image"
               >
                 <ImageIcon className="w-5 h-5" />
               </button>
               {showCoverInput && (
-                <div className="absolute top-full left-0 mt-2 p-4 bg-white dark:bg-stone-800 rounded-2xl shadow-xl border border-stone-200 dark:border-stone-700 w-64 z-50">
-                  <p className="text-xs font-bold mb-2 uppercase tracking-wider text-stone-400">
+                <div className="absolute top-full left-0 mt-3 p-4 bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-stone-200 dark:border-stone-800 w-72 z-50">
+                  <p className="text-[10px] font-bold mb-3 uppercase tracking-[0.1em] text-stone-400">
                     Cover Image URL
                   </p>
                   <div className="flex gap-2">
@@ -182,7 +201,7 @@ export default function NoteEditor({
                       placeholder="https://..."
                       value={coverUrl}
                       onChange={(e) => setCoverUrl(e.target.value)}
-                      className="flex-1 bg-stone-100 dark:bg-stone-900 border-none rounded-lg p-2 text-xs outline-none focus:ring-1 focus:ring-[#4a2d5a]"
+                      className="flex-1 bg-stone-100 dark:bg-stone-950 border border-stone-50 dark:border-stone-800 rounded-xl p-2.5 text-xs outline-none focus:ring-2 focus:ring-[var(--accent)]"
                     />
                     <button
                       onClick={() => {
@@ -191,16 +210,16 @@ export default function NoteEditor({
                           `https://picsum.photos/seed/${randomId}/1200/400`,
                         );
                       }}
-                      className="p-2 bg-stone-100 dark:bg-stone-900 rounded-lg hover:bg-stone-200 dark:hover:bg-stone-800"
+                      className="p-2.5 bg-stone-100 dark:bg-stone-950 border border-stone-50 dark:border-stone-800 rounded-xl hover:bg-stone-200 dark:hover:bg-stone-800 transition-colors"
                       title="Random"
                     >
-                      <Plus className="w-3 h-3" />
+                      <Plus className="w-4 h-4" />
                     </button>
                   </div>
                   {coverUrl && (
                     <button
                       onClick={() => setCoverUrl("")}
-                      className="mt-2 text-[10px] text-red-500 font-bold hover:underline"
+                      className="mt-3 text-[10px] text-red-500 font-bold hover:underline"
                     >
                       Remove Cover
                     </button>
@@ -210,10 +229,10 @@ export default function NoteEditor({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setIsPreview(!isPreview)}
-              className="px-4 py-2 rounded-xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-sm font-medium transition-colors"
+              className="px-5 py-2.5 rounded-[14px] bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-xs font-bold uppercase tracking-wider transition-all active:scale-95"
             >
               {isPreview ? "Edit" : "Preview"}
             </button>
@@ -222,9 +241,9 @@ export default function NoteEditor({
                 handleSave();
                 onClose();
               }}
-              className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+              className="p-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-90"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -232,16 +251,16 @@ export default function NoteEditor({
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 sm:p-10">
           <div className="mx-auto">
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-6 mb-8">
               <div className="relative">
                 <button
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="text-5xl hover:scale-110 transition-transform"
+                  className="text-6xl hover:scale-110 transition-transform active:scale-90"
                 >
                   {emoji}
                 </button>
                 {showEmojiPicker && (
-                  <div className="absolute top-full left-0 mt-2 z-50">
+                  <div className="absolute top-full left-0 mt-4 z-50">
                     <EmojiPicker
                       onEmojiClick={(data: EmojiClickData) => {
                         setEmoji(data.emoji);
@@ -258,35 +277,35 @@ export default function NoteEditor({
               </div>
               <input
                 type="text"
-                placeholder="Note Title"
+                placeholder="Untitled Note"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full text-4xl font-bold bg-transparent border-none outline-none placeholder:text-stone-300 dark:placeholder:text-stone-700"
+                className="w-full text-5xl font-extrabold bg-transparent border-none outline-none placeholder:text-stone-200 dark:placeholder:text-stone-800 tracking-tight"
               />
             </div>
 
-            <div className="flex flex-wrap gap-2 mb-8">
+            <div className="flex flex-wrap gap-2 mb-10">
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="flex items-center gap-1 px-3 py-1 bg-black/5 dark:bg-white/5 rounded-full text-xs font-medium"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 bg-black/5 dark:bg-white/5 rounded-full text-[11px] font-bold uppercase tracking-wider border border-black/5 dark:border-white/5"
                 >
                   #{tag}
                   <button
                     onClick={() => removeTag(tag)}
-                    className="hover:text-red-500"
+                    className="hover:text-red-500 transition-colors"
                   >
-                    <X className="w-3 h-3" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </span>
               ))}
               <input
                 type="text"
-                placeholder="Add tag..."
+                placeholder="Add tags..."
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 onKeyDown={addTag}
-                className="bg-transparent border-none outline-none text-xs w-24 placeholder:text-stone-400"
+                className="bg-transparent border-none outline-none text-xs w-32 placeholder:text-stone-400 font-medium"
               />
             </div>
 
@@ -318,9 +337,9 @@ export default function NoteEditor({
                 handleSave();
                 onClose();
               }}
-              className="px-6 py-2 bg-[#4a2d5a] hover:bg-[#3d2147] text-white rounded-xl font-bold shadow-lg shadow-[#4a2d5a]/20 transition-all active:scale-95"
+              className="px-8 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-2xl font-black uppercase tracking-[0.1em] text-xs shadow-2xl shadow-[var(--accent)]/30 transition-all active:scale-95"
             >
-              {isNew ? "Create" : "Done"}
+              {isNew ? "Create Note" : "Save Changes"}
             </button>
           </div>
         </div>

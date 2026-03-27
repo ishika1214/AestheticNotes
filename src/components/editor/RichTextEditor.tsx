@@ -51,11 +51,12 @@ function MenuBar({ editor }: MenuBarProps) {
     }
   };
 
-  const buttonClass = 'p-2 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors active:scale-95';
-  const activeButtonClass = 'bg-[#5B3E6F] text-white dark:bg-[#9B7BA8]';
+  const buttonClass =
+    'p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-all active:scale-95 text-stone-500 dark:text-stone-400';
+  const activeButtonClass = 'bg-[var(--accent)] text-white dark:bg-[var(--accent)] dark:text-white shadow-sm';
 
   return (
-    <div className="flex flex-wrap gap-1 p-3 border-b border-black/10 dark:border-white/10 bg-white/50 dark:bg-stone-900/50 backdrop-blur-sm">
+    <div className="flex flex-wrap gap-1 p-2 border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/50 backdrop-blur-md">
       {/* Undo/Redo */}
       <button
         onClick={() => editor.chain().focus().undo().run()}
@@ -201,21 +202,21 @@ function MenuBar({ editor }: MenuBarProps) {
           <LinkIcon className="w-4 h-4" />
         </button>
         {showLinkInput && (
-          <div className="absolute top-full left-0 mt-2 p-3 bg-white dark:bg-stone-800 rounded-lg shadow-xl border border-stone-200 dark:border-stone-700 z-50">
+          <div className="absolute top-full left-0 mt-2 p-3 bg-white dark:bg-stone-900 rounded-xl shadow-2xl border border-stone-200 dark:border-stone-800 z-50">
             <input
               type="text"
               placeholder="https://..."
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddLink()}
-              className="w-40 px-3 py-2 bg-stone-100 dark:bg-stone-900 border-none rounded-lg text-sm outline-none focus:ring-2 focus:ring-[#5B3E6F]"
+              className="w-48 px-3 py-2 bg-stone-50 dark:bg-stone-950 border border-stone-100 dark:border-stone-800 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[var(--accent)]"
               autoFocus
             />
             <button
               onClick={handleAddLink}
-              className="mt-2 w-full px-3 py-1 bg-[#5B3E6F] text-white rounded-lg text-sm font-medium hover:bg-[#4a2d5a] transition-colors"
+              className="mt-2 w-full px-3 py-1.5 bg-[var(--accent)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--accent-hover)] transition-colors shadow-sm"
             >
-              Add
+              Add Link
             </button>
           </div>
         )}
@@ -259,11 +260,11 @@ export const RichTextEditor = React.forwardRef<HTMLDivElement, RichTextEditorPro
     });
 
     return (
-      <div ref={ref} className="w-full rounded-xl border border-black/10 dark:border-white/10 overflow-hidden bg-white dark:bg-stone-900">
+      <div ref={ref} className="w-full rounded-2xl border border-black/5 dark:border-white/5 overflow-hidden bg-transparent">
         <MenuBar editor={editor} isDarkMode={isDarkMode} />
         <EditorContent
           editor={editor}
-          className="prose prose-stone dark:prose-invert max-w-none p-6 focus:outline-none text-base leading-relaxed"
+          className="prose prose-stone dark:prose-invert max-w-none p-0 focus:outline-none text-base leading-relaxed mt-4"
         />
       </div>
     );

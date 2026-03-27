@@ -145,9 +145,9 @@ export default function AuthModal() {
                 type="submit"
                 disabled={loading}
                 className="
-                  w-full py-3 rounded-xl font-bold text-white mt-2
+                  w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] text-xs text-white mt-4
                   transition-all active:scale-95 disabled:opacity-50
-                  shadow-lg dark:shadow-[0_10px_30px_rgba(122,109,138,0.35)]
+                  shadow-2xl shadow-[var(--accent)]/20
                 "
                 style={{ backgroundColor: 'var(--accent)' }}
               >

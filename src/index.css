@@ -1,26 +1,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
+@variant dark (&:where(.dark, .dark *));
 @plugin "@tailwindcss/typography";
 
 @layer base {
   :root {
-    --bg: #F8F3F6;
-    --text: #3F3F3F;
-    --accent: #4a2d5a;
-    --accent-hover: #3b2148;
+    --bg: #FFFFFF;
+    --text: #111827;
+    --accent: #7c3aed;
+    --accent-hover: #6d28d9;
+    --accent-soft: #f5f3ff;
+    --border: #e5e7eb;
   }
 
   .dark {
-    --bg: #0c0c0c;
-    --text: #f5f5f5;
-    --accent: #7a6d8a;
-    --accent-hover: #9a8fb0;
+    --bg: #0A0A0A;
+    --text: #F9FAFB;
+    --accent: #8b5cf6;
+    --accent-hover: #7c3aed;
+    --accent-soft: #1e1b4b;
+    --border: #262626;
   }
 
   body {
     font-family: Inter, system-ui, sans-serif;
     background-color: var(--bg);
     color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     @apply transition-colors duration-300;
   }
 }
@@ -29,9 +36,11 @@
   @apply prose prose-stone dark:prose-invert max-w-none;
 }
 
-.markdown-body h1 { @apply text-2xl font-bold mb-4; }
-.markdown-body h2 { @apply text-xl font-bold mb-3; }
-.markdown-body p { @apply mb-4 leading-relaxed; }
-.markdown-body ul { @apply list-disc pl-5 mb-4; }
-.markdown-body ol { @apply list-decimal pl-5 mb-4; }
-.markdown-body a { @apply text-[#4a2d5a] dark:text-[#7a6d8a] underline; }
+.markdown-body h1 { @apply text-3xl font-bold mb-6 tracking-tight; }
+.markdown-body h2 { @apply text-2xl font-bold mb-4 tracking-tight; }
+.markdown-body p { @apply mb-5 leading-relaxed text-[17px]; }
+.markdown-body ul { @apply list-disc pl-6 mb-5 space-y-2; }
+.markdown-body ol { @apply list-decimal pl-6 mb-5 space-y-2; }
+.markdown-body a { @apply text-[var(--accent)] hover:text-[var(--accent-hover)] underline transition-colors; }
+.markdown-body blockquote { @apply border-l-4 border-[var(--accent)] pl-4 italic text-stone-500 my-6; }
+

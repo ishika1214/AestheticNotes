@@ -61,6 +61,15 @@ export const deleteNote = createAsyncThunk('notes/deleteNote', async (id: string
   }
 });
 
+export const bulkDeleteNotes = createAsyncThunk('notes/bulkDeleteNotes', async (ids: string[], { rejectWithValue }) => {
+  try {
+    await api.delete('/notes/bulk', { data: { ids } });
+    return ids;
+  } catch (err: any) {
+    return rejectWithValue(err.response?.data?.message || 'Failed to delete notes');
+  }
+});
+
 const noteSlice = createSlice({
   name: 'notes',
   initialState,
@@ -90,6 +99,9 @@ const noteSlice = createSlice({
       })
       .addCase(deleteNote.fulfilled, (state, action) => {
         state.notes = state.notes.filter(n => n._id !== action.payload);
+      })
+      .addCase(bulkDeleteNotes.fulfilled, (state, action) => {
+        state.notes = state.notes.filter(n => !action.payload.includes(n._id));
       });
   },
 });
