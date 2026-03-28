@@ -9,54 +9,48 @@ import {
   Hash,
   Pin,
   LogOut,
+  Sparkles,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../hooks/redux";
 import { logout } from "../store/slices/authSlice";
 import {
   fetchNotes,
   fetchTags,
-  createNote,
   updateNote,
   deleteNote,
   bulkDeleteNotes,
 } from "../store/slices/noteSlice";
 import NoteCard from "../components/notes/NoteCard";
-import NoteEditor from "../components/notes/NoteEditor";
-import type { Note, NoteUpdate } from "../types";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import Logo from "../assets/aesthetic-notes-logo.png";
+import Logo from "../assets/Logo.png";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
-
-const NEW_NOTE_TEMPLATE: Note = {
-  _id: "",
-  title: "",
-  content: "",
-  emoji: "📝",
-  color: "bg-white/70 dark:bg-[#4a2d5a]/20 backdrop-blur-xl border-black/5 dark:border-white/10",
-  is_public: false,
-  is_pinned: false,
-  tags: [],
-  cover_image: null,
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
-};
-
 export default function Dashboard() {
+  const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { notes, tags: allTags } = useAppSelector((state) => state.notes);
 
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [editingNote, setEditingNote] = useState<Note | null>(null);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [isNewNote, setIsNewNote] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  });
 
   function getInitialTheme() {
     const savedTheme = localStorage.getItem("theme");
@@ -95,48 +89,37 @@ export default function Dashboard() {
   };
 
   const handleCreateNote = () => {
-    setEditingNote({
-      ...NEW_NOTE_TEMPLATE,
-      updated_at: new Date().toISOString(),
-    });
-    setIsNewNote(true);
-    setIsEditorOpen(true);
-  };
-
-  const handleSaveNote = async (updates: NoteUpdate) => {
-    if (isNewNote) {
-      await dispatch(createNote(updates));
-      dispatch(fetchTags());
-    } else if (editingNote) {
-      dispatch(updateNote({ id: editingNote._id, updates }));
-    }
+    navigate("/note/new");
   };
 
   const handleDeleteNote = (id: string) => {
-    if (confirm("Are you sure?")) {
-      dispatch(deleteNote(id));
-      setIsEditorOpen(false);
-      setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete Note",
+      message: "Are you sure you want to delete this note? This action cannot be undone.",
+      onConfirm: () => {
+        dispatch(deleteNote(id));
+        setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
+      },
+    });
   };
 
   const handleBulkDelete = () => {
-    if (confirm(`Delete ${selectedIds.length} notes permanently?`)) {
-      dispatch(bulkDeleteNotes(selectedIds));
-      setSelectedIds([]);
-    }
+    setConfirmConfig({
+      isOpen: true,
+      title: "Bulk Delete",
+      message: `Are you sure you want to delete ${selectedIds.length} notes permanently?`,
+      onConfirm: () => {
+        dispatch(bulkDeleteNotes(selectedIds));
+        setSelectedIds([]);
+      },
+    });
   };
 
   const toggleSelectNote = (id: string) => {
     setSelectedIds(prev => 
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
-  };
-
-  const handleCloseEditor = () => {
-    setIsEditorOpen(false);
-    setIsNewNote(false);
-    setEditingNote(null);
   };
 
   const toggleTagFilter = (tag: string) => {
@@ -160,7 +143,30 @@ export default function Dashboard() {
   const otherNotes = filteredNotes.filter((n) => !n.is_pinned);
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#fbfbfe] dark:bg-[#0d0d12] transition-colors duration-700 text-stone-900 dark:text-stone-100">
+      {/* Immersive Background Elements */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        {/* Designer Dot Grid for extra depth */}
+        <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#1f2937_1px,transparent_1px)] [background-size:24px_24px] opacity-60 dark:opacity-20" />
+        
+        {/* Soft Glowing Orbs */}
+        <motion.div 
+          animate={{ x: [0, 50, 0], y: [0, 30, 0], scale: [1, 1.1, 1] }} 
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[var(--neon-purple)] opacity-30 dark:opacity-40 blur-[100px] rounded-full mix-blend-multiply dark:mix-blend-screen" 
+        />
+        <motion.div 
+          animate={{ x: [0, -40, 0], y: [0, 60, 0], scale: [1, 1.2, 1] }} 
+          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+          className="absolute bottom-[-10%] right-[-10%] w-[35%] h-[35%] bg-[var(--neon-cyan)] opacity-30 dark:opacity-30 blur-[100px] rounded-full mix-blend-multiply dark:mix-blend-screen" 
+        />
+        <motion.div 
+          animate={{ x: [0, 30, 0], y: [0, -30, 0] }} 
+          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+          className="absolute top-[30%] left-[20%] w-[20%] h-[20%] bg-[var(--neon-pink)] opacity-20 dark:opacity-20 blur-[120px] rounded-full mix-blend-multiply dark:mix-blend-screen" 
+        />
+      </div>
+
       <header
         className="
   sticky top-0 z-30
@@ -220,6 +226,13 @@ export default function Dashboard() {
               ) : (
                 <Moon className="w-5 h-5" />
               )}
+            </button>
+            <button
+              onClick={() => navigate("/chat")}
+              className="p-2.5 hover:bg-[var(--accent)]/10 rounded-xl transition-all active:scale-90 text-[var(--accent)]"
+              title="AI Companion"
+            >
+              <Sparkles className="w-5 h-5" />
             </button>
             <div className="w-px h-6 bg-black/5 dark:bg-white/5 mx-1" />
             <button
@@ -283,11 +296,7 @@ export default function Dashboard() {
                   key={note._id}
                   note={note}
                   viewMode={viewMode}
-                  onClick={() => {
-                    setEditingNote(note);
-                    setIsNewNote(false);
-                    setIsEditorOpen(true);
-                  }}
+                  onClick={() => navigate(`/note/${note._id}`)}
                   onPin={() =>
                     dispatch(
                       updateNote({
@@ -325,11 +334,7 @@ export default function Dashboard() {
                 key={note._id}
                 note={note}
                 viewMode={viewMode}
-                onClick={() => {
-                  setEditingNote(note);
-                  setIsNewNote(false);
-                  setIsEditorOpen(true);
-                }}
+                onClick={() => navigate(`/note/${note._id}`)}
                 onPin={() =>
                   dispatch(
                     updateNote({
@@ -348,22 +353,21 @@ export default function Dashboard() {
         </section>
       </main>
 
-      <button
+      <motion.button
         onClick={handleCreateNote}
-        className="fixed bottom-10 right-10 w-16 h-16 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white rounded-[24px] shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] shadow-[var(--accent)]/40 flex items-center justify-center transition-all hover:scale-110 active:scale-90 z-40 group"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        className="fixed bottom-10 right-10 flex items-center gap-3 px-8 py-4 bg-stone-900 dark:bg-stone-50 border border-black/5 dark:border-white/10 rounded-[28px] shadow-[0_32px_64px_-16px_rgba(124,58,237,0.4)] z-40 group overflow-hidden energy-pulse"
       >
-        <Plus className="w-8 h-8 group-hover:rotate-90 transition-transform duration-300" />
-      </button>
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--neon-purple)]/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <Plus className="w-5 h-5 text-[var(--neon-purple)] group-hover:rotate-90 transition-transform duration-300 relative z-10" />
+        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white dark:text-black relative z-10">
+          Create Masterpiece
+        </span>
+      </motion.button>
 
       <AnimatePresence>
-        {isEditorOpen && editingNote && (
-          <NoteEditor
-            note={editingNote}
-            onClose={handleCloseEditor}
-            onUpdate={handleSaveNote}
-            onDelete={() => handleDeleteNote(editingNote._id)}
-          />
-        )}
+        {/* NoteEditor modal integration removed — now using dedicated NoteStudio pages */}
       </AnimatePresence>
 
       <AnimatePresence>
@@ -403,6 +407,14 @@ export default function Dashboard() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ConfirmDialog
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
+      />
     </div>
   );
 }

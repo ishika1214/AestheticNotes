@@ -39,8 +39,8 @@ export default function NoteCard({
       whileHover={{ y: -4 }}
       onClick={isSelectionMode ? onSelect : onClick}
       className={cn(
-        "group relative overflow-hidden rounded-[24px] cursor-pointer transition-all bg-white/70 dark:bg-stone-900/40 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-sm hover:shadow-[0_32px_64px_-16px_rgba(124,58,237,0.25)] hover:border-[var(--accent)]/30 dark:hover:border-[var(--accent)]/30 hover:-translate-y-1.5 duration-300",
-        isSelected && "ring-2 ring-[var(--accent)] bg-white/90 dark:bg-stone-800/60 shadow-[0_0_20px_rgba(124,58,237,0.2)]",
+        "group relative overflow-hidden rounded-[24px] cursor-pointer transition-all bg-white/70 dark:bg-stone-900/40 backdrop-blur-xl border border-black/5 dark:border-white/10 shadow-sm hover:neon-glow-purple hover:border-[var(--accent)]/30 dark:hover:border-[var(--accent)]/30 hover:-translate-y-1.5 duration-500",
+        isSelected && "ring-2 ring-[var(--accent)] bg-white/90 dark:bg-stone-800/60 shadow-[0_0_20px_rgba(124,58,237,0.3)]",
         note.color,
         viewMode === "list"
           ? "flex items-center p-4 gap-4"

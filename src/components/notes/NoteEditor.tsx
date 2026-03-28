@@ -16,6 +16,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { Note, NoteUpdate } from "../../types";
 import { RichTextEditor } from "../editor/RichTextEditor";
+import AIActions from "../ai/AIActions";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -101,6 +102,16 @@ export default function NoteEditor({
         setTags([...tags, newTag.trim()]);
       }
       setNewTag("");
+    }
+  };
+
+  const handleAIUpdate = (updates: { title?: string; content?: string; tags?: string[] }) => {
+    if (updates.title) setTitle(updates.title);
+    if (updates.content) setContent(updates.content);
+    if (updates.tags) {
+       // Merge or replace tags? Let's replace with AI suggested ones and keep uniques
+       const uniqueTags = Array.from(new Set([...tags, ...updates.tags]));
+       setTags(uniqueTags);
     }
   };
 
@@ -247,6 +258,8 @@ export default function NoteEditor({
             </button>
           </div>
         </div>
+
+        <AIActions content={content} onUpdate={handleAIUpdate} />
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-6 sm:p-10">

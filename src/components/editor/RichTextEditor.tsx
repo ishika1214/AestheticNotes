@@ -261,10 +261,12 @@ export const RichTextEditor = React.forwardRef<HTMLDivElement, RichTextEditorPro
 
     return (
       <div ref={ref} className="w-full rounded-2xl border border-black/5 dark:border-white/5 overflow-hidden bg-transparent">
-        <MenuBar editor={editor} isDarkMode={isDarkMode} />
+        <div className="px-6"> 
+          <MenuBar editor={editor} isDarkMode={isDarkMode} />
+        </div>
         <EditorContent
           editor={editor}
-          className="prose prose-stone dark:prose-invert max-w-none p-0 focus:outline-none text-base leading-relaxed mt-4"
+          className="prose prose-stone dark:prose-invert max-w-none px-12  focus:outline-none text-base leading-relaxed"
         />
       </div>
     );
