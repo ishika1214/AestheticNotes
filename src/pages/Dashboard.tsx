@@ -12,7 +12,9 @@ import {
   Sparkles,
   Book,
   PenTool,
-  FileText
+  FileText,
+  Trash2,
+  X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { toast } from "sonner";
@@ -28,18 +30,34 @@ import {
 } from "../store/slices/noteSlice";
 import NoteCard from "../components/notes/NoteCard";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
-import Logo from "../assets/Logo.png";
+import { cn } from "../lib/utils";
+import {
+  CircleFace,
+  HexFace,
+  BlobFace,
+  Starburst,
+  Leaf,
+  FaceCluster,
+} from "../components/ui/Doodles";
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
+const CREATE_OPTIONS = [
+  { type: "note", label: "Note", icon: <FileText className="w-4 h-4" />, color: "#f27a1a" },
+  { type: "novel", label: "Novel", icon: <Book className="w-4 h-4" />, color: "#4cc4c0" },
+  { type: "diary", label: "Diary", icon: <PenTool className="w-4 h-4" />, color: "#2fb36a" },
+] as const;
+
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { notes, tags: allTags } = useAppSelector((state) => state.notes);
+  const { user } = useAppSelector((state) => state.auth);
 
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -47,7 +65,7 @@ export default function Dashboard() {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activeType, setActiveType] = useState<'all' | 'note' | 'novel' | 'diary'>('all');
   const [showCreateMenu, setShowCreateMenu] = useState(false);
-  
+
   const [confirmConfig, setConfirmConfig] = useState<{
     isOpen: boolean;
     title: string;
@@ -76,13 +94,13 @@ export default function Dashboard() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === "n") {
         e.preventDefault();
-        handleCreateNote();
+        navigate("/note/new?type=note");
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [dispatch]);
+  }, [dispatch, navigate]);
 
   const toggleTheme = () => {
     const newMode = !isDarkMode;
@@ -103,12 +121,12 @@ export default function Dashboard() {
   const handleDeleteNote = (id: string) => {
     setConfirmConfig({
       isOpen: true,
-      title: "Delete Note",
-      message: "Are you sure you want to delete this note? This action cannot be undone.",
+      title: "Delete this note?",
+      message: "This note will be removed for good. This can't be undone.",
       onConfirm: () => {
         dispatch(deleteNote(id));
         setSelectedIds(prev => prev.filter(selectedId => selectedId !== id));
-        toast.success("Artifact Erased 🗑️");
+        toast.success("Note deleted");
       },
     });
   };
@@ -116,19 +134,19 @@ export default function Dashboard() {
   const handleBulkDelete = () => {
     setConfirmConfig({
       isOpen: true,
-      title: "Bulk Delete",
-      message: `Are you sure you want to delete ${selectedIds.length} notes permanently?`,
+      title: "Delete selected notes?",
+      message: `${selectedIds.length} notes will be removed for good. This can't be undone.`,
       onConfirm: () => {
         dispatch(bulkDeleteNotes(selectedIds));
         const count = selectedIds.length;
         setSelectedIds([]);
-        toast.success(`${count} Artifacts Erased 🧹`);
+        toast.success(`${count} notes deleted`);
       },
     });
   };
 
   const toggleSelectNote = (id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -144,92 +162,84 @@ export default function Dashboard() {
       n.title.toLowerCase().includes(search.toLowerCase()) ||
       n.content.toLowerCase().includes(search.toLowerCase()) ||
       n.tags.some((t) => t.toLowerCase().includes(search.toLowerCase()));
-    
+
     const matchesTags =
       selectedTags.length === 0 ||
       selectedTags.every((tag) => n.tags.includes(tag));
-    
+
     const matchesType = activeType === 'all' || (n.type || 'note') === activeType;
-    
+
     return matchesSearch && matchesTags && matchesType;
   });
 
   const pinnedNotes = filteredNotes.filter((n) => n.is_pinned);
   const otherNotes = filteredNotes.filter((n) => !n.is_pinned);
 
+  const countOf = (t: 'note' | 'novel' | 'diary') => notes.filter((n) => (n.type || 'note') === t).length;
+
+  const gridClass = cn(
+    "grid gap-5",
+    viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1",
+  );
+
+  const renderCard = (note: (typeof notes)[number]) => (
+    <NoteCard
+      key={note._id}
+      note={note}
+      viewMode={viewMode}
+      onClick={() => navigate(`/note/${note._id}`)}
+      onPin={() => dispatch(updateNote({ id: note._id, updates: { is_pinned: !note.is_pinned } }))}
+      onDelete={() => handleDeleteNote(note._id)}
+      isSelectionMode={selectedIds.length > 0}
+      isSelected={selectedIds.includes(note._id)}
+      onSelect={() => toggleSelectNote(note._id)}
+    />
+  );
+
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden bg-[#fbfbfe] dark:bg-[#0d0d12] transition-colors duration-700 text-stone-900 dark:text-stone-100">
-      {/* Immersive Background Elements */}
-      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#1f2937_1px,transparent_1px)] [background-size:24px_24px] opacity-60 dark:opacity-20" />
-        
-        <motion.div 
-          animate={{ x: [0, 50, 0], y: [0, 30, 0], scale: [1, 1.1, 1] }} 
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[var(--neon-purple)] opacity-30 dark:opacity-40 blur-[100px] rounded-full mix-blend-multiply dark:mix-blend-screen" 
-        />
-        <motion.div 
-          animate={{ x: [0, -40, 0], y: [0, 60, 0], scale: [1, 1.2, 1] }} 
-          transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-          className="absolute bottom-[-10%] right-[-10%] w-[35%] h-[35%] bg-[var(--neon-cyan)] opacity-30 dark:opacity-30 blur-[100px] rounded-full mix-blend-multiply dark:mix-blend-screen" 
-        />
-        <motion.div 
-          animate={{ x: [0, 30, 0], y: [0, -30, 0] }} 
-          transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
-          className="absolute top-[30%] left-[20%] w-[20%] h-[20%] bg-[var(--neon-pink)] opacity-20 dark:opacity-20 blur-[120px] rounded-full mix-blend-multiply dark:mix-blend-screen" 
-        />
-      </div>
+    <div className="min-h-screen flex flex-col bg-[var(--bg)] text-[var(--text)]">
+      {/* HEADER */}
+      <header className="sticky top-0 z-30 bg-[var(--bg)]/85 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 px-4 sm:px-6 py-4">
+          <button onClick={() => navigate("/dashboard")} className="flex items-center gap-2 shrink-0">
+            <CircleFace className="w-8 h-8" color="#f27a1a" mood="happy" />
+            <span className="text-xl font-semibold tracking-tight hidden sm:block">Aesthetic</span>
+          </button>
 
-      <header className="sticky top-0 z-30 bg-white/60 dark:bg-black/40 backdrop-blur-2xl border-b border-black/5 dark:border-white/10 px-4 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 flex items-center justify-center">
-              <img src={Logo} alt="Aesthetic Notes Logo" className="w-10 h-10" />
-            </div>
-            <h1 className="text-xl font-black tracking-tight hidden sm:block text-[var(--accent)] dark:text-stone-50 uppercase italic">
-              Aesthetic Notes
-            </h1>
-          </div>
-
-          <div className="flex-1 max-w-xl relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400 group-focus-within:text-[var(--accent)] transition-colors" />
+          <div className="flex-1 max-w-xl relative">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--muted)]" />
             <input
               type="text"
-              placeholder="Search your thoughts..."
+              placeholder="Search your notes"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 bg-stone-100/50 dark:bg-[#4a2d5a]/10 border border-transparent focus:border-[var(--accent)]/30 rounded-2xl focus:ring-4 focus:ring-[var(--accent)]/5 outline-none transition-all placeholder:text-stone-400 dark:placeholder:text-stone-600 font-medium"
+              className="field rounded-full pl-12 py-3"
             />
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-              className="p-2.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-all active:scale-90 text-stone-500 dark:text-stone-400"
-              title={viewMode === "grid" ? "List View" : "Grid View"}
+              className="icon-btn hidden sm:inline-flex"
+              title={viewMode === "grid" ? "List view" : "Grid view"}
             >
               {viewMode === "grid" ? <ListIcon className="w-5 h-5" /> : <LayoutGrid className="w-5 h-5" />}
             </button>
-            <button
-              onClick={toggleTheme}
-              className="p-2.5 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-all active:scale-90 text-stone-500 dark:text-stone-400"
-              title="Toggle Theme"
-            >
+            <button onClick={toggleTheme} className="icon-btn" title="Toggle theme">
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
             <button
               onClick={() => navigate("/chat")}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[var(--accent)]/10 to-[var(--accent)]/[0.05] hover:from-[var(--accent)] hover:to-[var(--accent)] hover:text-white rounded-xl transition-all active:scale-95 text-[var(--accent)] border border-[var(--accent)]/20 shadow-sm group"
+              className="inline-flex items-center gap-2 rounded-full border-[1.5px] border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-medium transition-all hover:border-[var(--accent)] active:scale-95"
               title="AI Companion"
             >
-              <Sparkles className="w-4 h-4 transition-transform group-hover:rotate-12" />
-              <span className="text-[10px] font-black uppercase tracking-widest leading-none">Study AI</span>
+              <Sparkles className="w-4 h-4 text-[#f27a1a]" />
+              <span className="hidden md:inline">Ask AI</span>
             </button>
-            <div className="w-px h-6 bg-black/5 dark:bg-white/5 mx-1" />
             <button
               onClick={() => dispatch(logout())}
-              className="p-2.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all active:scale-90 text-red-500"
-              title="Sign Out"
+              className="icon-btn hover:!text-[#d1495b]"
+              title="Sign out"
             >
               <LogOut className="w-5 h-5" />
             </button>
@@ -237,31 +247,90 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 pb-32">
+        {/* WELCOME BANNER */}
+        <section className="grain relative overflow-hidden rounded-[36px] bg-[#f9e4cf] text-[#0b3b3c] dark:bg-[#143b3c] dark:text-[#f6efe6] px-6 py-10 sm:px-12 sm:py-12 mt-2 mb-10">
+          <div className="relative z-10 max-w-lg">
+            <p className="text-sm opacity-70">{greeting()}{user?.username ? `, ${user.username}` : ""}</p>
+            <h1 className="mt-2 text-3xl sm:text-5xl font-semibold tracking-tight leading-tight">
+              What's on your mind today?
+            </h1>
+            <p className="mt-4 text-sm opacity-75">
+              {notes.length === 0
+                ? "Your space is ready. Start with a note, a novel or a diary."
+                : `${countOf('note')} notes · ${countOf('novel')} novels · ${countOf('diary')} diaries`}
+            </p>
+            <div className="mt-7 flex flex-wrap gap-2">
+              {CREATE_OPTIONS.map((opt, i) => (
+                <button
+                  key={opt.type}
+                  onClick={() => handleCreateNote(opt.type)}
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium transition-all active:scale-95",
+                    i === 0
+                      ? "bg-[#0b3b3c] text-white hover:bg-[#082c2d] dark:bg-[#f9e4cf] dark:text-[#0b3b3c]"
+                      : "bg-white/70 hover:bg-white dark:bg-white/10 dark:hover:bg-white/15",
+                  )}
+                >
+                  {opt.icon}
+                  New {opt.label.toLowerCase()}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="pointer-events-none absolute right-0 top-0 bottom-0 hidden w-[42%] md:block">
+            <HexFace className="float-soft absolute right-[38%] top-[12%] w-28" style={{ ["--r" as string]: "-10deg" }} />
+            <BlobFace className="absolute right-[6%] top-[-14%] w-36" />
+            <CircleFace className="absolute right-[14%] bottom-[-18%] w-36" />
+            <Starburst className="absolute right-[48%] bottom-[8%] w-16" />
+            <Leaf className="absolute right-[-4%] bottom-[18%] w-24" />
+          </div>
+        </section>
+
+        {/* TYPE TABS */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-5">
+          <div className="inline-flex w-fit rounded-full bg-[var(--surface)] p-1 shadow-[var(--shadow)] overflow-x-auto scrollbar-hide max-w-full">
+            {([
+              { id: 'all', label: 'All' },
+              { id: 'note', label: 'Notes' },
+              { id: 'novel', label: 'Novels' },
+              { id: 'diary', label: 'Diaries' },
+            ] as const).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveType(tab.id)}
+                className="relative whitespace-nowrap rounded-full px-5 py-2 text-sm font-medium transition-colors"
+                style={{ color: activeType === tab.id ? 'var(--accent-contrast)' : 'var(--muted)' }}
+              >
+                {activeType === tab.id && (
+                  <motion.span layoutId="activeTabIndicator" className="absolute inset-0 rounded-full bg-[var(--accent)]" />
+                )}
+                <span className="relative">{tab.label}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-sm text-[var(--muted)]">
+            {filteredNotes.length} {filteredNotes.length === 1 ? "item" : "items"}
+          </p>
+        </div>
+
         {/* TAGS FILTER */}
         {allTags.length > 0 && (
-          <div className="flex flex-wrap gap-2.5 mb-2 overflow-x-auto pb-2 scrollbar-hide text-nowrap">
+          <div className="flex gap-2 mb-8 overflow-x-auto pb-1 scrollbar-hide">
             <button
               onClick={() => setSelectedTags([])}
-              className={cn(
-                "px-5 py-2.5 rounded-2xl text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95 shadow-sm",
-                selectedTags.length === 0
-                  ? "bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/20"
-                  : "bg-white dark:bg-stone-900 border border-black/5 dark:border-white/10 text-stone-400"
-              )}
+              data-active={selectedTags.length === 0}
+              className="chip shrink-0"
             >
-              All Tags
+              All tags
             </button>
             {allTags.map((tag) => (
               <button
                 key={tag}
                 onClick={() => toggleTagFilter(tag)}
-                className={cn(
-                  "px-5 py-2.5 rounded-2xl text-[11px] font-bold uppercase tracking-wider transition-all active:scale-95 flex items-center gap-2 shadow-sm",
-                  selectedTags.includes(tag)
-                    ? "bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/20"
-                    : "bg-white dark:bg-stone-900 border border-black/5 dark:border-white/10 text-stone-400"
-                )}
+                data-active={selectedTags.includes(tag)}
+                className="chip shrink-0"
               >
                 <Hash className="w-3 h-3" />
                 {tag}
@@ -270,111 +339,65 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* TYPE TABS */}
-        <div className="flex items-center gap-6 mb-8 border-b border-black/5 dark:border-white/5 pb-4 overflow-x-auto scrollbar-hide">
-          {[
-            { id: 'all', label: 'All Artifacts', icon: <Sparkles className="w-4 h-4" /> },
-            { id: 'note', label: 'Studio Notes', icon: <FileText className="w-4 h-4" /> },
-            { id: 'novel', label: 'Masterpiece Novels', icon: <Book className="w-4 h-4" /> },
-            { id: 'diary', label: 'Personal Diaries', icon: <PenTool className="w-4 h-4" /> },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveType(tab.id as any)}
-              className={cn(
-                "flex items-center gap-2 px-1 pb-4 relative transition-all whitespace-nowrap",
-                activeType === tab.id 
-                  ? "text-[var(--accent)] font-black" 
-                  : "text-stone-400 font-bold hover:text-stone-600 dark:hover:text-stone-200"
-              )}
-            >
-              <div className={cn(
-                "w-8 h-8 rounded-xl flex items-center justify-center transition-all",
-                activeType === tab.id ? "bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/20" : "bg-stone-100 dark:bg-white/5"
-              )}>
-                {tab.icon}
-              </div>
-              <span className="text-[10px] uppercase tracking-widest">{tab.label}</span>
-              {activeType === tab.id && (
-                <motion.div layoutId="activeTabIndicator" className="absolute bottom-0 left-0 right-0 h-1 bg-[var(--accent)] rounded-full" />
-              )}
-            </button>
-          ))}
-        </div>
+        {filteredNotes.length === 0 && (
+          <div className="card flex flex-col items-center px-6 py-16 text-center">
+            <FaceCluster className="h-40 w-48" />
+            <h2 className="mt-6 text-xl font-semibold">
+              {notes.length === 0 ? "Nothing here yet" : "No matches"}
+            </h2>
+            <p className="mt-2 max-w-sm text-sm text-[var(--muted)]">
+              {notes.length === 0
+                ? "Create your first note and it will show up here."
+                : "Try a different search, tag or tab."}
+            </p>
+            {notes.length === 0 && (
+              <button onClick={() => handleCreateNote()} className="btn-pill mt-6">
+                <Plus className="w-4 h-4" /> New note
+              </button>
+            )}
+          </div>
+        )}
 
         {pinnedNotes.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-4 flex items-center gap-2">
+          <section className="mb-10">
+            <h2 className="eyebrow mb-4 flex items-center gap-2">
               <Pin className="w-3 h-3" /> Pinned
             </h2>
-            <div className={cn("grid gap-4", viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1")}>
-              {pinnedNotes.map((note) => (
-                <NoteCard
-                  key={note._id}
-                  note={note}
-                  viewMode={viewMode}
-                  onClick={() => navigate(`/note/${note._id}`)}
-                  onPin={() => dispatch(updateNote({ id: note._id, updates: { is_pinned: !note.is_pinned } }))}
-                  onDelete={() => handleDeleteNote(note._id)}
-                  isSelectionMode={selectedIds.length > 0}
-                  isSelected={selectedIds.includes(note._id)}
-                  onSelect={() => toggleSelectNote(note._id)}
-                />
-              ))}
-            </div>
+            <div className={gridClass}>{pinnedNotes.map(renderCard)}</div>
           </section>
         )}
 
-        <section>
-          {pinnedNotes.length > 0 && (
-            <h2 className="text-xs font-semibold uppercase tracking-widest text-stone-400 mb-4">
-              Others
-            </h2>
-          )}
-          <div className={cn("grid gap-4", viewMode === "grid" ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1")}>
-            {otherNotes.map((note) => (
-              <NoteCard
-                key={note._id}
-                note={note}
-                viewMode={viewMode}
-                onClick={() => navigate(`/note/${note._id}`)}
-                onPin={() => dispatch(updateNote({ id: note._id, updates: { is_pinned: !note.is_pinned } }))}
-                onDelete={() => handleDeleteNote(note._id)}
-                isSelectionMode={selectedIds.length > 0}
-                isSelected={selectedIds.includes(note._id)}
-                onSelect={() => toggleSelectNote(note._id)}
-              />
-            ))}
-          </div>
-        </section>
+        {otherNotes.length > 0 && (
+          <section>
+            {pinnedNotes.length > 0 && <h2 className="eyebrow mb-4">Everything else</h2>}
+            <div className={gridClass}>{otherNotes.map(renderCard)}</div>
+          </section>
+        )}
       </main>
 
-      {/* CREATE MENU SYSTEM */}
-      <div className="fixed bottom-10 right-10 z-50 flex flex-col items-end gap-4">
+      {/* CREATE MENU */}
+      <div className="fixed bottom-6 right-6 sm:bottom-10 sm:right-10 z-50 flex flex-col items-end gap-3">
         <AnimatePresence>
           {showCreateMenu && (
             <motion.div
-              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              initial={{ opacity: 0, y: 16, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 20, scale: 0.9 }}
-              className="flex flex-col gap-3 mb-2"
+              exit={{ opacity: 0, y: 16, scale: 0.95 }}
+              className="card flex flex-col gap-1 p-2"
             >
-              {[
-                { type: 'diary', label: 'Daily Diary', icon: <PenTool className="w-4 h-4" />, color: "bg-emerald-500" },
-                { type: 'novel', label: 'Novel Masterpiece', icon: <Book className="w-4 h-4" />, color: "bg-purple-500" },
-                { type: 'note', label: 'Studio Note', icon: <FileText className="w-4 h-4" />, color: "bg-amber-500" },
-              ].map((opt) => (
+              {CREATE_OPTIONS.map((opt) => (
                 <button
                   key={opt.type}
-                  onClick={() => handleCreateNote(opt.type as any)}
-                  className="flex items-center gap-3 px-6 py-3 bg-white dark:bg-stone-900 border border-black/5 dark:border-white/10 rounded-2xl shadow-xl hover:scale-105 transition-all text-left group"
+                  onClick={() => handleCreateNote(opt.type)}
+                  className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-colors hover:bg-[var(--bg)]"
                 >
-                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-lg", opt.color)}>
+                  <span
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-white"
+                    style={{ background: opt.color }}
+                  >
                     {opt.icon}
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest text-stone-600 dark:text-stone-300">
-                    {opt.label}
                   </span>
+                  New {opt.label.toLowerCase()}
                 </button>
               ))}
             </motion.div>
@@ -383,54 +406,40 @@ export default function Dashboard() {
 
         <motion.button
           onClick={() => setShowCreateMenu(!showCreateMenu)}
-          whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className={cn(
-            "flex items-center gap-3 px-8 py-4 rounded-[28px] shadow-[0_32px_64px_-16px_rgba(124,58,237,0.4)] transition-all overflow-hidden relative group",
-            showCreateMenu ? "bg-stone-800 text-white" : "bg-stone-900 dark:bg-stone-50 text-white dark:text-stone-900"
-          )}
+          className="btn-pill px-6 py-4 shadow-[0_20px_40px_-12px_rgba(11,59,60,0.45)]"
         >
-          <Plus className={cn("w-5 h-5 transition-transform duration-500 relative z-10", showCreateMenu && "rotate-[135deg]")} />
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] relative z-10 hidden sm:block">
-            {showCreateMenu ? "Close Menu" : "Create Masterpiece"}
-          </span>
+          <Plus className={cn("w-5 h-5 transition-transform duration-300", showCreateMenu && "rotate-45")} />
+          <span className="hidden sm:block">{showCreateMenu ? "Close" : "Create"}</span>
         </motion.button>
       </div>
 
+      {/* BULK BAR */}
       <AnimatePresence>
         {selectedIds.length > 0 && (
           <motion.div
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 px-6 py-4 bg-stone-900 border border-white/10 rounded-[28px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] flex items-center gap-8 backdrop-blur-3xl"
+            className="fixed bottom-6 sm:bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 rounded-full bg-[#0b3b3c] py-2 pl-3 pr-2 text-white shadow-[0_24px_48px_-12px_rgba(11,59,60,0.5)] dark:bg-[#f9e4cf] dark:text-[#0b3b3c]"
           >
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => setSelectedIds([])}
-                className="p-2 hover:bg-white/5 rounded-full transition-colors text-stone-400"
-              >
-                <Plus className="w-5 h-5 rotate-45" />
-              </button>
-              <div className="flex flex-col">
-                <span className="text-sm font-bold text-white">
-                  {selectedIds.length} {selectedIds.length === 1 ? 'note' : 'notes'} selected
-                </span>
-                <span className="text-[10px] text-stone-500 font-bold uppercase tracking-widest">
-                  Bulk Actions
-                </span>
-              </div>
-            </div>
-            <div className="w-px h-8 bg-white/10" />
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleBulkDelete}
-                className="flex items-center gap-2 px-6 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-xl shadow-red-500/20"
-              >
-                <Pin className="w-4 h-4 rotate-45" />
-                Delete Selected
-              </button>
-            </div>
+            <button
+              onClick={() => setSelectedIds([])}
+              className="rounded-full p-2 transition-colors hover:bg-white/10 dark:hover:bg-black/5"
+              title="Clear selection"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <span className="text-sm font-medium whitespace-nowrap">
+              {selectedIds.length} selected
+            </span>
+            <button
+              onClick={handleBulkDelete}
+              className="flex items-center gap-2 rounded-full bg-[#f2a5ad] px-5 py-2.5 text-sm font-medium text-[#0b3b3c] transition-all hover:bg-[#f48d98] active:scale-95"
+            >
+              <Trash2 className="w-4 h-4" />
+              Delete
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -439,6 +448,7 @@ export default function Dashboard() {
         isOpen={confirmConfig.isOpen}
         title={confirmConfig.title}
         message={confirmConfig.message}
+        confirmText="Delete"
         onConfirm={confirmConfig.onConfirm}
         onCancel={() => setConfirmConfig((prev) => ({ ...prev, isOpen: false }))}
       />

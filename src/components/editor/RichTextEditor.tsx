@@ -18,12 +18,7 @@ import {
   LinkIcon,
   Trash2,
 } from 'lucide-react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../../lib/utils';
 
 interface MenuBarProps {
   editor: ReturnType<typeof useEditor> | null;
@@ -52,11 +47,11 @@ function MenuBar({ editor }: MenuBarProps) {
   };
 
   const buttonClass =
-    'p-2 rounded-lg hover:bg-stone-100 dark:hover:bg-stone-800 transition-all active:scale-95 text-stone-500 dark:text-stone-400';
-  const activeButtonClass = 'bg-[var(--accent)] text-white dark:bg-[var(--accent)] dark:text-white shadow-sm';
+    'p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-all active:scale-95 opacity-70 hover:opacity-100';
+  const activeButtonClass = '!bg-[#0b3b3c] !text-white !opacity-100 dark:!bg-[#f9e4cf] dark:!text-[#0b3b3c]';
 
   return (
-    <div className="flex flex-wrap gap-1 p-2 border-b border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/50 backdrop-blur-md">
+    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-0.5 rounded-full bg-white/80 dark:bg-black/25 backdrop-blur-md px-2 py-1.5 w-fit max-w-full shadow-[var(--shadow)]">
       {/* Undo/Redo */}
       <button
         onClick={() => editor.chain().focus().undo().run()}
@@ -75,7 +70,7 @@ function MenuBar({ editor }: MenuBarProps) {
         <Redo2 className="w-4 h-4" />
       </button>
 
-      <div className="w-px bg-black/10 dark:bg-white/10" />
+      <div className="mx-1 h-5 w-px bg-current opacity-10" />
 
       {/* Text Formatting */}
       <button
@@ -115,7 +110,7 @@ function MenuBar({ editor }: MenuBarProps) {
         <UnderlineIcon className="w-4 h-4" />
       </button>
 
-      <div className="w-px bg-black/10 dark:bg-white/10" />
+      <div className="mx-1 h-5 w-px bg-current opacity-10" />
 
       {/* Headings */}
       <button
@@ -139,7 +134,7 @@ function MenuBar({ editor }: MenuBarProps) {
         <Heading2 className="w-4 h-4" />
       </button>
 
-      <div className="w-px bg-black/10 dark:bg-white/10" />
+      <div className="mx-1 h-5 w-px bg-current opacity-10" />
 
       {/* Lists */}
       <button
@@ -163,7 +158,7 @@ function MenuBar({ editor }: MenuBarProps) {
         <ListOrdered className="w-4 h-4" />
       </button>
 
-      <div className="w-px bg-black/10 dark:bg-white/10" />
+      <div className="mx-1 h-5 w-px bg-current opacity-10" />
 
       {/* Quote & Code */}
       <button
@@ -187,7 +182,7 @@ function MenuBar({ editor }: MenuBarProps) {
         <Code className="w-4 h-4" />
       </button>
 
-      <div className="w-px bg-black/10 dark:bg-white/10" />
+      <div className="mx-1 h-5 w-px bg-current opacity-10" />
 
       {/* Link */}
       <div className="relative">
@@ -202,19 +197,19 @@ function MenuBar({ editor }: MenuBarProps) {
           <LinkIcon className="w-4 h-4" />
         </button>
         {showLinkInput && (
-          <div className="absolute top-full left-0 mt-2 p-3 bg-white dark:bg-stone-900 rounded-xl shadow-2xl border border-stone-200 dark:border-stone-800 z-50">
+          <div className="card absolute top-full left-0 mt-2 p-3 z-50 text-[var(--text)]">
             <input
               type="text"
               placeholder="https://..."
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleAddLink()}
-              className="w-48 px-3 py-2 bg-stone-50 dark:bg-stone-950 border border-stone-100 dark:border-stone-800 rounded-lg text-sm outline-none focus:ring-2 focus:ring-[var(--accent)]"
+              className="field w-56 py-2.5"
               autoFocus
             />
             <button
               onClick={handleAddLink}
-              className="mt-2 w-full px-3 py-1.5 bg-[var(--accent)] text-white rounded-lg text-sm font-semibold hover:bg-[var(--accent-hover)] transition-colors shadow-sm"
+              className="btn-pill mt-2 w-full py-2"
             >
               Add Link
             </button>
@@ -267,13 +262,11 @@ export const RichTextEditor = React.forwardRef<HTMLDivElement, RichTextEditorPro
     }, [value, editor]);
 
     return (
-      <div ref={ref} className="w-full rounded-2xl border border-black/5 dark:border-white/5 overflow-hidden bg-transparent">
-        <div className="px-6"> 
-          <MenuBar editor={editor} isDarkMode={isDarkMode} />
-        </div>
+      <div ref={ref} className="w-full">
+        <MenuBar editor={editor} isDarkMode={isDarkMode} />
         <EditorContent
           editor={editor}
-          className="prose prose-stone dark:prose-invert max-w-none px-12  focus:outline-none text-base leading-relaxed"
+          className="prose prose-ink max-w-none mt-6 min-h-[50vh] text-[17px] leading-relaxed [&_.ProseMirror]:min-h-[50vh]"
         />
       </div>
     );

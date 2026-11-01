@@ -17,25 +17,14 @@ import {
   Plus
 } from "lucide-react";
 import EmojiPicker, { type EmojiClickData, Theme } from "emoji-picker-react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "../lib/utils";
+import { NOTE_COLORS, resolveNoteColor } from "../lib/palette";
 import { RichTextEditor } from "../components/editor/RichTextEditor";
 import AIActions from "../components/ai/AIActions";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
+import { CircleFace } from "../components/ui/Doodles";
 import api from "../api/axios";
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-
-const COLORS = [
-  { name: "Default", value: "bg-white/70 dark:bg-[#4a2d5a]/20 backdrop-blur-xl border-black/5 dark:border-white/10" },
-  { name: "Rose", value: "bg-rose-50/70 dark:bg-rose-950/30 backdrop-blur-xl border-rose-100/50 dark:border-rose-900/40" },
-  { name: "Amber", value: "bg-amber-50/70 dark:bg-amber-950/30 backdrop-blur-xl border-amber-100/50 dark:border-amber-900/40" },
-  { name: "Emerald", value: "bg-emerald-50/70 dark:bg-emerald-950/30 backdrop-blur-xl border-emerald-100/50 dark:border-emerald-900/40" },
-  { name: "Blue", value: "bg-blue-50/70 dark:bg-blue-950/30 backdrop-blur-xl border-blue-100/50 dark:border-blue-900/40" },
-  { name: "Indigo", value: "bg-indigo-50/70 dark:bg-indigo-950/30 backdrop-blur-xl border-indigo-100/50 dark:border-indigo-900/40" },
-  { name: "Violet", value: "bg-violet-50/70 dark:bg-violet-950/30 backdrop-blur-xl border-violet-100/50 dark:border-violet-900/40" },
-];
 
 interface NoteStudioProps {
   isNew?: boolean;
@@ -48,7 +37,8 @@ export default function NoteStudio({ isNew = false }: NoteStudioProps) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [emoji, setEmoji] = useState("📝");
-  const [color, setColor] = useState(COLORS[0].value);
+  const [color, setColor] = useState(NOTE_COLORS[0].key);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
@@ -132,29 +122,27 @@ export default function NoteStudio({ isNew = false }: NoteStudioProps) {
         justCreatedRef.current = true;
 
         navigate(`/note/${data._id}`, { replace: true });
-        toast.success("New Masterpiece Persisted ✨");
+        toast.success("Note saved");
       } else {
         await api.put(`/notes/${id}`, payload);
-        toast.success("Masterpiece Updated ✨");
+        toast.success("Changes saved");
       }
     } catch (error) {
       console.error("Failed to save note:", error);
-      toast.error("Creative block! Failed to save.");
+      toast.error("Couldn't save. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
 
   const deleteNote = async () => {
-    if (!confirm("Delete this masterpiece?")) return;
-
     try {
       await api.delete(`/notes/${id}`);
-      toast.success("Artifact Erased 🗑️");
-      navigate("/");
+      toast.success("Note deleted");
+      navigate("/dashboard");
     } catch (error) {
       console.error("Failed to delete note:", error);
-      toast.error("Failed to erase this artifact.");
+      toast.error("Couldn't delete this note.");
     }
   };
 
@@ -190,174 +178,147 @@ export default function NoteStudio({ isNew = false }: NoteStudioProps) {
     ? content 
     : sections.map(s => `## ${s.title}\n${s.content}`).join('\n\n');
 
+  const activeColor = resolveNoteColor(color);
+
+  const addEntry = () => {
+    const newIndex = sections.length;
+    setSections([...sections, { title: type === 'diary' ? `Entry ${newIndex + 1}` : `Chapter ${newIndex + 1}`, content: "", date: new Date().toISOString() }]);
+    setCurrentPage(newIndex);
+  };
+
+  const splitCurrentPage = () => {
+    const text = sections[currentPage]?.content ?? "";
+    const mid = Math.floor(text.length / 2);
+    handleSplitPage(currentPage, text.slice(0, mid), text.slice(mid));
+  };
+
+  const goBack = async () => {
+    if (isNew) {
+      if (title.trim() || content.trim()) {
+        await handleSave(); // handleSave handles navigation for new notes
+      } else {
+        navigate("/dashboard");
+      }
+    } else {
+      await handleSave();
+      navigate("/dashboard");
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="h-screen w-full flex items-center justify-center bg-stone-50 dark:bg-black">
-        <div className="animate-pulse flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-[var(--accent)]/20" />
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400">
-            Loading Workspace
-          </p>
+      <div className="h-screen w-full flex items-center justify-center bg-[var(--bg)]">
+        <div className="flex flex-col items-center gap-4">
+          <CircleFace className="w-14 h-14 energy-pulse" color="#f27a1a" mood="happy" />
+          <p className="text-sm text-[var(--muted)]">Opening your note…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      className={cn(
-        "h-screen w-full flex flex-col relative overflow-hidden transition-colors duration-700",
-        color
-      )}
-    >
-
-
-      {/* HEADER */}
-      <header className="relative z-20 h-16 flex items-center justify-between px-6 bg-white/30 dark:bg-black/20 backdrop-blur-2xl border-b border-black/5 dark:border-white/5">
-        <div className="flex items-center gap-6">
-          <button
-            onClick={async () => {
-              if (isNew) {
-                if (title.trim() || content.trim()) {
-                  await handleSave(); // handleSave handles navigation for new notes
-                } else {
-                  navigate("/");
-                }
-              } else {
-                await handleSave();
-                navigate("/");
-              }
-            }}
-            className="group flex items-center gap-2 p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all active:scale-95"
-          >
-            <ChevronLeft className="w-5 h-5 text-stone-500 group-hover:text-stone-900 dark:group-hover:text-stone-100" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-stone-400 group-hover:text-stone-700 dark:group-hover:text-stone-200">
-              Workspace
-            </span>
+    <div className="h-screen w-full flex flex-col overflow-hidden bg-[var(--bg)] text-[var(--text)]">
+      {/* TOOLBAR */}
+      <header className="relative z-20 flex items-center justify-between gap-3 px-3 sm:px-6 py-3">
+        <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+          <button onClick={goBack} className="btn-ghost pl-3">
+            <ChevronLeft className="w-5 h-5" />
+            <span className="hidden sm:inline">All notes</span>
           </button>
 
-          <div className="h-6 w-px bg-black/5 dark:bg-white/10" />
+          <div className="hidden sm:block h-6 w-px bg-[var(--border)] mx-1" />
 
-          <div className="flex items-center gap-2">
-            {[
-              { icon: <Pin className="w-4 h-4" />, active: isPinned, onClick: () => setIsPinned(!isPinned) },
-              { icon: isPublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />, active: isPublic, onClick: () => setIsPublic(!isPublic) }
-            ].map((btn, i) => (
-              <button
-                key={i}
-                onClick={btn.onClick}
-                className={cn(
-                  "p-2.5 rounded-xl transition-all active:scale-90",
-                  btn.active ? "bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/20" : "hover:bg-black/5 dark:hover:bg-white/5 text-stone-500"
-                )}
-              >
-                {btn.icon}
-              </button>
-            ))}
+          <button
+            onClick={() => setIsPinned(!isPinned)}
+            className={cn("icon-btn", isPinned && "!text-[#f27a1a]")}
+            title={isPinned ? "Unpin" : "Pin"}
+          >
+            <Pin className={cn("w-4 h-4", isPinned && "fill-current")} />
+          </button>
+          <button
+            onClick={() => setIsPublic(!isPublic)}
+            className={cn("icon-btn", isPublic && "!text-[var(--text)]")}
+            title={isPublic ? "Public" : "Private"}
+          >
+            {isPublic ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+          </button>
 
-            <div className="relative">
-              <button
-                onClick={() => setShowColorPicker(!showColorPicker)}
-                className="p-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 transition-all text-stone-500"
-              >
-                <Palette className="w-4 h-4" />
-              </button>
-
-              <AnimatePresence>
-                {showColorPicker && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                    className="absolute top-full left-0 mt-3 p-3 bg-white dark:bg-stone-900 rounded-2xl shadow-2xl border border-black/5 dark:border-white/10 flex gap-2"
-                  >
-                    {COLORS.map((c) => (
-                      <button
-                        key={c.name}
-                        onClick={() => {
-                          setColor(c.value);
-                          setShowColorPicker(false);
-                        }}
-                        className={cn(
-                          "w-8 h-8 rounded-full border border-black/5 transition-all hover:scale-110",
-                          c.value,
-                          color === c.value && "ring-2 ring-[var(--accent)] ring-offset-2 dark:ring-offset-black"
-                        )}
-                      />
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
+          <div className="relative">
             <button
-              onClick={() => setIsAIPanelOpen(!isAIPanelOpen)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all active:scale-95 group/ai relative overflow-hidden",
-                isAIPanelOpen 
-                  ? "bg-[var(--accent)] text-white shadow-lg shadow-[var(--accent)]/30 border border-white/10" 
-                  : "bg-white/50 dark:bg-white/5 hover:bg-[var(--accent)]/10 border border-black/5 dark:border-white/5"
-              )}
-              title="AI Study Panel"
+              onClick={() => setShowColorPicker(!showColorPicker)}
+              className="icon-btn"
+              title="Note colour"
             >
-              <Sparkles className={cn("w-4 h-4 transition-transform group-hover/ai:rotate-12 text-[var(--accent)]", isAIPanelOpen ? "text-white animate-pulse" : "text-[var(--accent)]")} />
-              <span className={cn(
-                "text-[10px] font-black uppercase tracking-widest leading-none transition-colors",
-                isAIPanelOpen ? "text-white" : "text-[var(--accent)]"
-              )}>
-                AI Studio
-              </span>
-              {!isAIPanelOpen && (
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/ai:translate-x-full transition-transform duration-1000" />
-              )}
+              <Palette className="w-4 h-4" />
             </button>
 
-            {/* ENTRY CONTROLS (Top Right Outside Book) */}
-            {(type === 'diary' || type === 'novel') && (
-              <div className="flex items-center gap-2 bg-stone-100/50 dark:bg-white/5 p-1.5 rounded-2xl border border-black/5 dark:border-white/5 shadow-sm">
-                <button
-                  onClick={() => handleSplitPage(currentPage, sections[currentPage].content.slice(0, Math.floor(sections[currentPage].content.length / 2)), sections[currentPage].content.slice(Math.floor(sections[currentPage].content.length / 2)))}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-white dark:hover:bg-stone-900 rounded-xl transition-all active:scale-95 text-stone-600 dark:text-stone-300 group/split"
-                  title="Split into New Page"
+            <AnimatePresence>
+              {showColorPicker && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                  className="card absolute top-full left-0 mt-2 p-3 grid grid-cols-4 gap-2 z-50"
                 >
-                  <Plus className="w-3.5 h-3.5 text-emerald-500" />
-                  <span className="text-[9px] font-black uppercase tracking-widest">Add Page</span>
-                </button>
-                <div className="w-px h-4 bg-black/10 dark:bg-white/10" />
-                <button
-                  onClick={() => {
-                    const newIndex = sections.length;
-                    setSections([...sections, { title: type === 'diary' ? `Entry ${newIndex + 1}` : `Chapter ${newIndex + 1}`, content: "", date: new Date().toISOString() }]);
-                    setCurrentPage(newIndex);
-                  }}
-                  className="flex items-center gap-2 px-3 py-2 hover:bg-white dark:hover:bg-stone-900 rounded-xl transition-all active:scale-95 text-stone-600 dark:text-stone-300 group/add"
-                  title="Start Fresh Chapter"
-                >
-                  <Plus className="w-3.5 h-3.5 text-[var(--accent)]" />
-                  <span className="text-[9px] font-black uppercase tracking-widest">Add Chapter</span>
-                </button>
-              </div>
-            )}
+                  {NOTE_COLORS.map((c) => (
+                    <button
+                      key={c.key}
+                      onClick={() => {
+                        setColor(c.key);
+                        setShowColorPicker(false);
+                      }}
+                      title={c.name}
+                      className={cn(
+                        "w-9 h-9 rounded-full border-[1.5px] border-black/10 transition-transform hover:scale-110",
+                        activeColor.key === c.key && "ring-2 ring-[#f27a1a] ring-offset-2 ring-offset-[var(--surface)]"
+                      )}
+                      style={{ background: c.swatch }}
+                    />
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-[10px] font-bold text-stone-400 uppercase tracking-widest bg-stone-100/50 dark:bg-white/5 px-4 py-2 rounded-full">
-            <CloudCheck className="w-3.5 h-3.5 text-emerald-500" />
-            {isSaving ? "Saving..." : "Saved"}
-          </div>
           <button
-            onClick={handleSave}
-            className="px-8 py-3 bg-stone-900 dark:bg-stone-50 text-white dark:text-black rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:scale-105 active:scale-95 transition-all shadow-xl shadow-black/10"
+            onClick={() => setIsAIPanelOpen(!isAIPanelOpen)}
+            className={cn(
+              "ml-1 inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium transition-all active:scale-95",
+              isAIPanelOpen
+                ? "bg-[#f27a1a] text-white"
+                : "bg-[var(--surface)] border-[1.5px] border-[var(--border)] hover:border-[#f27a1a]"
+            )}
+            title="AI Studio"
           >
-            {isNew ? "Save New Note" : "Save Note"}
+            <Sparkles className={cn("w-4 h-4", !isAIPanelOpen && "text-[#f27a1a]")} />
+            <span className="hidden md:inline">AI Studio</span>
           </button>
 
+          {(type === 'diary' || type === 'novel') && (
+            <div className="hidden lg:flex items-center gap-1 ml-1">
+              <button onClick={splitCurrentPage} className="btn-ghost text-[var(--muted)]" title="Split this page in two">
+                <Plus className="w-4 h-4" /> Split page
+              </button>
+              <button onClick={addEntry} className="btn-ghost text-[var(--muted)]" title="Start a fresh page">
+                <Plus className="w-4 h-4" /> {type === 'diary' ? "New entry" : "New chapter"}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="hidden md:flex items-center gap-1.5 text-xs text-[var(--muted)]">
+            <CloudCheck className="w-4 h-4 text-[#2fb36a]" />
+            {isSaving ? "Saving…" : updatedAt ? `Edited ${format(new Date(updatedAt), "MMM d, p")}` : "Not saved yet"}
+          </span>
+          <button onClick={handleSave} disabled={isSaving} className="btn-pill px-5 py-2.5">
+            Save
+          </button>
           {!isNew && (
             <button
-              onClick={deleteNote}
-              className="p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all active:scale-90 shadow-sm border border-red-500/10"
-              title="Delete Note"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="icon-btn hover:!text-[#d1495b]"
+              title="Delete note"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -365,17 +326,30 @@ export default function NoteStudio({ isNew = false }: NoteStudioProps) {
         </div>
       </header>
 
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
-        {/* MAIN CANVAS */}
-        <main className="flex-1 overflow-y-auto relative z-10 scrollbar-hide flex flex-col items-center border-b md:border-b-0 md:border-r border-black/5 dark:border-white/5">
-        <div className="w-full max-w-4xl px-4 sm:px-12 py-6 sm:py-8 flex flex-col flex-1">
-          {/* HEADER — EMOJI + TITLE */}
-          <div className="group relative mb-4">
-            <div className="flex items-center gap-4 mb-2">
-              <div className="relative group/emoji">
+      {/* Mobile book controls */}
+      {(type === 'diary' || type === 'novel') && (
+        <div className="flex lg:hidden items-center gap-2 px-4 pb-2">
+          <button onClick={splitCurrentPage} className="chip"><Plus className="w-3.5 h-3.5" /> Split page</button>
+          <button onClick={addEntry} className="chip"><Plus className="w-3.5 h-3.5" /> {type === 'diary' ? "New entry" : "New chapter"}</button>
+        </div>
+      )}
+
+      <div className="flex-1 flex overflow-hidden relative px-2 sm:px-4 pb-2 sm:pb-4 gap-4">
+        {/* CANVAS */}
+        <main
+          className={cn(
+            "flex-1 overflow-y-auto scrollbar-hide rounded-[32px] transition-colors duration-500 shadow-[var(--shadow)]",
+            activeColor.surface
+          )}
+        >
+          <div className="mx-auto w-full max-w-3xl px-5 sm:px-12 py-8 sm:py-14 flex flex-col min-h-full">
+            {/* EMOJI + TITLE */}
+            <div className="flex items-start gap-4 mb-4">
+              <div className="relative">
                 <button
                   onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  className="text-5xl md:text-6xl hover:scale-110 transition-transform active:scale-90"
+                  className="flex h-16 w-16 md:h-20 md:w-20 items-center justify-center rounded-full bg-white/70 dark:bg-white/10 text-4xl md:text-5xl transition-transform hover:scale-105 active:scale-95"
+                  title="Change emoji"
                 >
                   {emoji}
                 </button>
@@ -383,10 +357,10 @@ export default function NoteStudio({ isNew = false }: NoteStudioProps) {
                 <AnimatePresence>
                   {showEmojiPicker && (
                     <motion.div
-                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      initial={{ opacity: 0, scale: 0.95, y: 8 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                      className="absolute top-full left-0 mt-4 z-50"
+                      exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                      className="absolute top-full left-0 mt-3 z-50"
                     >
                       <EmojiPicker
                         onEmojiClick={(data: EmojiClickData) => {
@@ -402,141 +376,134 @@ export default function NoteStudio({ isNew = false }: NoteStudioProps) {
 
               <input
                 type="text"
-                placeholder="Untitled Thought"
+                placeholder="Untitled"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="flex-1 text-2xl md:text-4xl font-black bg-transparent border-none outline-none placeholder:text-stone-300 dark:placeholder:text-stone-800 tracking-tighter leading-tight"
+                className="flex-1 min-w-0 pt-2 md:pt-4 text-3xl md:text-5xl font-semibold bg-transparent border-none outline-none placeholder:opacity-30 placeholder:text-current tracking-tight leading-tight"
               />
             </div>
 
             {/* TAGS */}
-            <div className="flex flex-wrap gap-2 mb-4">
+            <div className="flex flex-wrap items-center gap-2 mb-8">
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-black/5 dark:bg-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-black/5 dark:border-white/5"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/70 dark:bg-white/10 pl-3 pr-2 py-1.5 text-xs font-medium"
                 >
                   #{tag}
                   <button
                     onClick={() => setTags(tags.filter((t) => t !== tag))}
-                    className="hover:text-red-500 transition-colors"
+                    className="rounded-full p-0.5 opacity-60 hover:opacity-100 hover:bg-black/5"
+                    title="Remove tag"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-3 h-3" />
                   </button>
                 </span>
               ))}
-
               <input
                 type="text"
-                placeholder="+ Tag"
+                placeholder="+ Add tag"
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 onKeyDown={addTag}
-                className="bg-transparent border-none outline-none text-[10px] font-black uppercase tracking-widest w-24 placeholder:text-stone-400"
+                className="bg-transparent border-none outline-none text-xs font-medium w-28 px-2 py-1.5 placeholder:opacity-50 placeholder:text-current"
               />
             </div>
-          </div>
 
-          {/* MAIN EDITOR / BOOK VIEW */}
-          <div className="flex-1 min-h-[500px] w-full">
-            {type === 'note' ? (
-              <RichTextEditor value={content} onChange={setContent} />
-            ) : (
-              <BookView 
-                type={type as 'novel' | 'diary'} 
-                sections={sections}
-                currentPage={currentPage}
-                onPageChange={setCurrentPage}
-                onUpdateSection={(index, updates) => {
-                  const newSections = [...sections];
-                  newSections[index] = { ...newSections[index], ...updates };
-                  setSections(newSections);
-                }}
-                onAddSection={() => {
-                  setSections([...sections, { title: "New Chapter", content: "" }]);
-                }}
-                onRemoveSection={(index) => {
-                  setSections(sections.filter((_, i) => i !== index));
-                }}
-              />
-            )}
-          </div>
-        </div>
+            {/* EDITOR / BOOK */}
+            <div className={cn("flex-1 w-full", type !== 'note' && "pb-28")}>
+              {type === 'note' ? (
+                <RichTextEditor value={content} onChange={setContent} />
+              ) : (
+                <BookView
+                  type={type as 'novel' | 'diary'}
+                  sections={sections}
+                  currentPage={currentPage}
+                  onPageChange={setCurrentPage}
+                  onUpdateSection={(index, updates) => {
+                    const newSections = [...sections];
+                    newSections[index] = { ...newSections[index], ...updates };
+                    setSections(newSections);
+                  }}
+                  onAddSection={() => {
+                    setSections([...sections, { title: "New Chapter", content: "" }]);
+                  }}
+                  onRemoveSection={(index) => {
+                    setSections(sections.filter((_, i) => i !== index));
+                  }}
+                />
+              )}
+            </div>
 
-        {/* FOOTER */}
-        <footer className="w-full max-w-4xl px-12 pb-12">
-          <div className="h-px w-full bg-black/5 dark:bg-white/5 mb-6" />
-
-          <div className="flex items-center justify-between">
-            <div className="text-[10px] font-black uppercase tracking-[0.2em] text-stone-400 italic">
+            <footer className="mt-12 pt-6 border-t border-current/10 text-xs opacity-50">
               {isNew
-                ? "A new concept takes shape"
-                : `Refining ideas since ${format(
-                    new Date(updatedAt || Date.now()),
-                    "PPPP"
-                  )}`}
+                ? "A fresh page. Start anywhere."
+                : `Last edited ${format(new Date(updatedAt || Date.now()), "PPPP")}`}
+            </footer>
+          </div>
+        </main>
+
+        {/* AI STUDIO PANEL */}
+        <motion.aside
+          initial={false}
+          animate={{
+            width: isAIPanelOpen ? (window.innerWidth < 768 ? '100%' : (isAIExpanded ? 850 : 400)) : 0,
+            opacity: isAIPanelOpen ? 1 : 0,
+            x: isAIPanelOpen ? 0 : (window.innerWidth < 768 ? '100%' : 0)
+          }}
+          transition={{ type: "spring", stiffness: 300, damping: 32 }}
+          className={cn(
+            "h-full overflow-hidden flex flex-col z-50 bg-[var(--surface)] shadow-[var(--shadow)]",
+            "fixed inset-y-0 right-0 md:relative md:rounded-[32px]"
+          )}
+        >
+          <div className={cn(
+            "h-full p-5 sm:p-7 flex flex-col overflow-hidden",
+            isAIExpanded ? "w-full md:w-[850px]" : "w-full md:w-[400px]"
+          )}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="flex items-center gap-2 text-lg font-semibold">
+                <Sparkles className="w-5 h-5 text-[#f27a1a]" /> AI Studio
+              </h3>
+              <button onClick={() => setIsAIPanelOpen(false)} className="icon-btn" title="Close">
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            <p className="text-[9px] font-black uppercase tracking-tight text-stone-300">
-              Aesthetic Notes Pro // Creative Studio v1.1
-            </p>
-          </div>
-        </footer>
-      </main>
-
-      {/* PERSISTENT AI STUDIO PANEL */}
-      <motion.aside
-        initial={false}
-        animate={{ 
-          width: isAIPanelOpen ? (window.innerWidth < 768 ? '100%' : (isAIExpanded ? 850 : 420)) : 0,
-          opacity: isAIPanelOpen ? 1 : 0,
-          x: isAIPanelOpen ? 0 : (window.innerWidth < 768 ? '100%' : 0)
-        }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={cn(
-          "h-full bg-white/70 dark:bg-stone-950/40 backdrop-blur-3xl overflow-hidden flex flex-col border-l border-black/5 dark:border-white/5 z-50",
-          "fixed md:relative top-0 right-0 shadow-2xl md:shadow-none"
-        )}
-      >
-        <div className={cn(
-          "h-full p-6 sm:p-8 flex flex-col overflow-hidden transition-all duration-500",
-          isAIExpanded ? "w-full md:w-[850px]" : "w-full md:w-[420px]"
-        )}>
-          <div className="flex items-center justify-between mb-8">
-            <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-[var(--accent)]">Note AI Studio</h3>
-            <button
-               onClick={() => setIsAIPanelOpen(false)}
-               className="p-2 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 text-stone-400"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-
-          <AIActions
-            content={aggregatedContent}
-            original={{ title, content: aggregatedContent, tags }}
-            onUpdate={(u) => {
-              if (u.title) setTitle(u.title);
-              if (u.content) {
-                if (type === 'note') {
-                  setContent(u.content);
-                } else {
-                   // For novels/diaries, we apply the AI update to the current chapter
-                   const newSections = [...sections];
-                   newSections[currentPage] = { 
-                     ...newSections[currentPage], 
-                     content: u.content 
-                   };
-                   setSections(newSections);
+            <AIActions
+              content={aggregatedContent}
+              original={{ title, content: aggregatedContent, tags }}
+              onUpdate={(u) => {
+                if (u.title) setTitle(u.title);
+                if (u.content) {
+                  if (type === 'note') {
+                    setContent(u.content);
+                  } else {
+                    // For novels/diaries, we apply the AI update to the current chapter
+                    const newSections = [...sections];
+                    newSections[currentPage] = {
+                      ...newSections[currentPage],
+                      content: u.content
+                    };
+                    setSections(newSections);
+                  }
                 }
-              }
-              if (u.tags) setTags([...new Set([...tags, ...u.tags])]);
-            }}
-            onPreviewChange={setIsAIExpanded}
-          />
-        </div>
-      </motion.aside>
-     </div>
+                if (u.tags) setTags([...new Set([...tags, ...u.tags])]);
+              }}
+              onPreviewChange={setIsAIExpanded}
+            />
+          </div>
+        </motion.aside>
+      </div>
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="Delete this note?"
+        message="This note will be removed for good. This can't be undone."
+        confirmText="Delete"
+        onConfirm={deleteNote}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }

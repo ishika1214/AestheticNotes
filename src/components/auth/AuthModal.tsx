@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
-import { User as UserIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Link } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../../hooks/redux';
 import { login, register, clearError } from '../../store/slices/authSlice';
-import authbackground from '../../assets/Aesthetic-Logo.png';
+import {
+  HexFace,
+  CircleFace,
+  BlobFace,
+  TriangleFace,
+  Starburst,
+  Leaf,
+  Asterisk,
+} from '../ui/Doodles';
 
 export default function AuthModal() {
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
@@ -26,101 +34,103 @@ export default function AuthModal() {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 backdrop-blur-md">
-      <motion.div
-        initial={{ scale: 0.95, y: 20 }}
-        animate={{ scale: 1, y: 0 }}
-        className="
-          relative w-full min-h-screen md:h-[90vh]
-          flex flex-col md:flex-row
-          bg-white dark:bg-black overflow-hidden
-        "
-      >
-        {/* LEFT SIDE (DESKTOP) */}
-        <div
-          className="hidden md:flex w-1/2 items-center justify-center p-8"
-          style={{
-            backgroundImage: `url(${authbackground})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        >
-          <h2 className="text-3xl font-bold text-white drop-shadow-xl text-center">
-            Welcome to your Notes Manager
-          </h2>
+    <div className="min-h-screen bg-[var(--bg)] p-3 text-[var(--text)] sm:p-5">
+      <div className="mx-auto grid min-h-[calc(100vh-1.5rem)] max-w-6xl gap-5 sm:min-h-[calc(100vh-2.5rem)] md:grid-cols-2">
+        {/* ART PANEL */}
+        <div className="grain relative hidden overflow-hidden rounded-[40px] bg-[#f9e4cf] p-12 text-[#0b3b3c] md:flex md:flex-col md:gap-16 dark:bg-[#143b3c] dark:text-[#f6efe6]">
+          <Link to="/" className="relative z-10 flex items-center gap-2 text-2xl font-semibold tracking-tight">
+            <CircleFace className="h-8 w-8" color="#f27a1a" mood="happy" />
+            Aesthetic
+          </Link>
+
+          <div className="relative z-10 max-w-sm">
+            <h2 className="text-4xl font-semibold leading-tight tracking-tight">
+              Your thoughts deserve a softer place to land.
+            </h2>
+            <p className="mt-4 opacity-80">Notes, novels and diaries with a gentle AI by your side.</p>
+          </div>
+
+          <TriangleFace className="absolute right-8 top-8 w-24 rotate-12" />
+          <HexFace className="float-soft absolute bottom-28 right-[-20px] w-36" />
+          <BlobFace className="absolute bottom-[-40px] left-[30%] w-44" />
+          <CircleFace className="absolute bottom-[-30px] left-[-30px] w-36" />
+          <Starburst className="absolute bottom-[34%] left-[38%] w-16" />
+          <Leaf className="absolute bottom-[-10px] right-[24%] w-28" />
+          <Asterisk className="absolute bottom-[30%] left-[12%] w-10" />
         </div>
 
-        {/* RIGHT SIDE */}
-        <div className="relative w-full md:w-1/2 min-h-screen flex items-center justify-center p-4 sm:p-8 md:p-12">
-          {/* MOBILE BACKGROUND */}
-          <div
-            className="absolute inset-0 md:hidden"
-            style={{
-              backgroundImage: `url(${authbackground})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          />
-
-          {/* FORM CARD */}
-          <div
-            className="
-              relative z-10 w-full max-w-sm rounded-2xl p-6
-              backdrop-blur-xl
-
-              bg-transparent
-              md:bg-white/80 md:dark:bg-black/70
-
-              border border-transparent
-              dark:border-white/15
-
-              dark:shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_20px_40px_rgba(0,0,0,0.6)]
-            "
+        {/* FORM */}
+        <div className="relative flex items-center justify-center overflow-hidden rounded-[40px] px-5 py-12 sm:px-10">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-sm"
           >
-            {/* HEADER */}
-            <div className="text-center mb-6">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-xl mx-auto mb-4"
-                style={{ backgroundColor: 'var(--accent)' }}
-              >
-                <UserIcon className="w-8 h-8" />
-              </div>
+            <Link to="/" className="mb-10 flex items-center gap-2 text-xl font-semibold md:hidden">
+              <CircleFace className="h-7 w-7" color="#f27a1a" mood="happy" />
+              Aesthetic
+            </Link>
 
-              <h2 className="text-2xl font-bold text-stone-900 dark:text-stone-100">
-                {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
-              </h2>
-
-              <p className="text-stone-600 dark:text-stone-400 text-sm mt-1">
-                {authMode === 'login'
-                  ? 'Sign in to access your notes'
-                  : 'Join us to start organizing your thoughts'}
-              </p>
+            {/* Mode switch */}
+            <div className="mb-8 inline-flex rounded-full bg-[var(--surface)] p-1 shadow-[var(--shadow)]">
+              {(['login', 'register'] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => {
+                    setAuthMode(m);
+                    dispatch(clearError());
+                  }}
+                  className="relative rounded-full px-5 py-2 text-sm font-medium transition-colors"
+                  style={{ color: authMode === m ? 'var(--accent-contrast)' : 'var(--muted)' }}
+                >
+                  {authMode === m && (
+                    <motion.span layoutId="auth-tab" className="absolute inset-0 rounded-full bg-[var(--accent)]" />
+                  )}
+                  <span className="relative">{m === 'login' ? 'Sign in' : 'Sign up'}</span>
+                </button>
+              ))}
             </div>
 
-            {/* FORM */}
-            <form onSubmit={handleAuth} className="flex flex-col gap-4">
-              {authMode === 'register' && (
-                <input
-                  type="text"
-                  placeholder="Username"
-                  required
-                  value={authForm.username}
-                  onChange={(e) =>
-                    setAuthForm({ ...authForm, username: e.target.value })
-                  }
-                  className={inputClass}
-                />
-              )}
+            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+              {authMode === 'login' ? 'Welcome back' : 'Create your space'}
+            </h1>
+            <p className="mt-2 text-[var(--muted)]">
+              {authMode === 'login'
+                ? 'Sign in to pick up where you left off.'
+                : 'Join to start organising your thoughts.'}
+            </p>
+
+            <form onSubmit={handleAuth} className="mt-8 flex flex-col gap-3">
+              <AnimatePresence initial={false}>
+                {authMode === 'register' && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Username"
+                      required
+                      value={authForm.username}
+                      onChange={(e) =>
+                        setAuthForm({ ...authForm, username: e.target.value })
+                      }
+                      className="field"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               <input
                 type="email"
-                placeholder="Email Address"
+                placeholder="Email address"
                 required
                 value={authForm.email}
                 onChange={(e) =>
                   setAuthForm({ ...authForm, email: e.target.value })
                 }
-                className={inputClass}
+                className="field"
               />
 
               <input
@@ -131,72 +141,39 @@ export default function AuthModal() {
                 onChange={(e) =>
                   setAuthForm({ ...authForm, password: e.target.value })
                 }
-                className={inputClass}
+                className="field"
               />
 
               {error && (
-                <p className="text-red-500 text-xs text-center font-medium">
+                <p className="rounded-2xl bg-[#fbdcdc] px-4 py-3 text-sm text-[#8a2a33] dark:bg-[#3b2427] dark:text-[#f6c1c6]">
                   {error}
                 </p>
               )}
 
-              {/* BUTTON */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="
-                  w-full py-4 rounded-xl font-black uppercase tracking-[0.1em] text-xs text-white mt-4
-                  transition-all active:scale-95 disabled:opacity-50
-                  shadow-2xl shadow-[var(--accent)]/20
-                "
-                style={{ backgroundColor: 'var(--accent)' }}
-              >
+              <button type="submit" disabled={loading} className="btn-pill mt-4 w-full py-3.5">
                 {loading
-                  ? 'Processing...'
+                  ? 'Just a moment…'
                   : authMode === 'login'
-                  ? 'Sign In'
-                  : 'Sign Up'}
+                  ? 'Sign in'
+                  : 'Create account'}
               </button>
             </form>
 
-            {/* SWITCH */}
-            <div className="mt-6 text-center">
+            <p className="mt-8 text-center text-sm text-[var(--muted)]">
+              {authMode === 'login' ? "Don't have an account? " : 'Already have an account? '}
               <button
                 onClick={() => {
                   setAuthMode(authMode === 'login' ? 'register' : 'login');
                   dispatch(clearError());
                 }}
-                className="text-sm text-stone-600 dark:text-stone-400 hover:text-[var(--accent)] transition-colors"
+                className="font-medium text-[var(--text)] underline underline-offset-4"
               >
-                {authMode === 'login'
-                  ? "Don't have an account? Sign Up"
-                  : 'Already have an account? Sign In'}
+                {authMode === 'login' ? 'Sign up' : 'Sign in'}
               </button>
-            </div>
-          </div>
+            </p>
+          </motion.div>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
-
-/* INPUT STYLE */
-const inputClass = `
-  w-full px-4 py-3 rounded-xl outline-none transition-all
-
-  bg-stone-100
-  md:bg-white
-  dark:bg-stone-900/60
-
-  border border-stone-200
-  dark:border-white/10
-
-  text-stone-900
-  dark:text-stone-100
-
-  placeholder:text-stone-500
-  dark:placeholder:text-stone-400
-
-  focus:ring-2
-  focus:ring-[var(--accent)]
-`;

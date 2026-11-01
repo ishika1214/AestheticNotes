@@ -1,11 +1,7 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { AlertCircle, X } from 'lucide-react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { X } from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { CircleFace } from './Doodles';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -17,6 +13,12 @@ interface ConfirmDialogProps {
   onCancel: () => void;
   variant?: 'danger' | 'warning' | 'info';
 }
+
+const FACE_COLOR = {
+  danger: '#f2a5ad',
+  warning: '#ecb93f',
+  info: '#4cc4c0',
+};
 
 export default function ConfirmDialog({
   isOpen,
@@ -37,61 +39,48 @@ export default function ConfirmDialog({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onCancel}
-            className="absolute inset-0 bg-stone-950/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#0b3b3c]/40 backdrop-blur-sm"
           />
           <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            initial={{ scale: 0.95, opacity: 0, y: 16 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            className="relative w-full max-w-md bg-white/70 dark:bg-stone-900/60 backdrop-blur-2xl rounded-[32px] border border-black/5 dark:border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] overflow-hidden"
+            exit={{ scale: 0.95, opacity: 0, y: 16 }}
+            className="card relative w-full max-w-sm overflow-hidden p-8 text-center text-[var(--text)]"
           >
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-6">
-                <div className={cn(
-                  "p-3 rounded-2xl",
-                  variant === 'danger' && "bg-red-500/10 text-red-500",
-                  variant === 'warning' && "bg-amber-500/10 text-amber-500",
-                  variant === 'info' && "bg-[var(--accent)]/10 text-[var(--accent)]",
-                )}>
-                  <AlertCircle className="w-6 h-6" />
-                </div>
-                <button
-                  onClick={onCancel}
-                  className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-xl transition-colors text-stone-400"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+            <button onClick={onCancel} className="icon-btn absolute right-4 top-4" aria-label="Close">
+              <X className="w-4 h-4" />
+            </button>
 
-              <h3 className="text-2xl font-black text-stone-900 dark:text-stone-50 mb-2 tracking-tight">
-                {title}
-              </h3>
-              <p className="text-stone-500 dark:text-stone-400 text-sm leading-relaxed mb-8">
-                {message}
-              </p>
+            <CircleFace
+              className="mx-auto mb-5 h-16 w-16"
+              color={FACE_COLOR[variant]}
+              mood={variant === 'danger' ? 'calm' : 'happy'}
+            />
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={onCancel}
-                  className="flex-1 px-6 py-4 rounded-2xl bg-black/5 dark:bg-white/5 hover:bg-black/10 dark:hover:bg-white/10 text-stone-600 dark:text-stone-300 font-bold uppercase tracking-widest text-[10px] transition-all active:scale-95"
-                >
-                  {cancelText}
-                </button>
-                <button
-                  onClick={() => {
-                    onConfirm();
-                    onCancel();
-                  }}
-                  className={cn(
-                    "flex-1 px-6 py-4 rounded-2xl text-white font-black uppercase tracking-widest text-[10px] transition-all active:scale-95 shadow-xl",
-                    variant === 'danger' && "bg-red-500 hover:bg-red-600 shadow-red-500/20",
-                    variant === 'warning' && "bg-amber-500 hover:bg-amber-600 shadow-amber-500/20",
-                    variant === 'info' && "bg-[var(--accent)] hover:bg-[var(--accent-hover)] shadow-[var(--accent)]/20",
-                  )}
-                >
-                  {confirmText}
-                </button>
-              </div>
+            <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-[var(--muted)]">{message}</p>
+
+            <div className="mt-8 flex flex-col-reverse gap-2 sm:flex-row">
+              <button
+                onClick={onCancel}
+                className="flex-1 rounded-full border-[1.5px] border-[var(--border)] px-6 py-3 text-sm font-medium transition-all hover:border-[var(--accent)] active:scale-95"
+              >
+                {cancelText}
+              </button>
+              <button
+                onClick={() => {
+                  onConfirm();
+                  onCancel();
+                }}
+                className={cn(
+                  'flex-1 rounded-full px-6 py-3 text-sm font-medium transition-all active:scale-95',
+                  variant === 'danger' && 'bg-[#d1495b] text-white hover:bg-[#b93a4b]',
+                  variant === 'warning' && 'bg-[#ecb93f] text-[#0b3b3c] hover:bg-[#e0a92a]',
+                  variant === 'info' && 'btn-pill',
+                )}
+              >
+                {confirmText}
+              </button>
             </div>
           </motion.div>
         </div>

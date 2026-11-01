@@ -1,6 +1,5 @@
 import { 
-  Sparkles, 
-  AlignLeft, 
+  AlignLeft,
   Type, 
   Hash, 
   CheckSquare, 
@@ -130,7 +129,7 @@ export default function AIActions({ content, original, onUpdate, onPreviewChange
       label: 'Summarize', 
       description: 'Condense your notes into key points',
       icon: <AlignLeft className="w-5 h-5" />, 
-      gradient: "from-blue-500 to-cyan-400 shadow-blue-500/20",
+      tint: "#d2efed",
       handler: () => handleAI('summarize', "Summarizing...", () => aiService.summarize(content)) 
     },
     { 
@@ -138,15 +137,15 @@ export default function AIActions({ content, original, onUpdate, onPreviewChange
       label: 'Generate Title', 
       description: 'Find the perfect headline',
       icon: <Type className="w-5 h-5" />, 
-      gradient: "from-purple-500 to-pink-500 shadow-purple-500/20",
+      tint: "#fbdcdc",
       handler: () => handleAI('title', "Generating Title...", () => aiService.generateTitle(content)) 
     },
     { 
       id: 'tags', 
-      label: 'Intelli-Tags', 
+      label: 'Suggest Tags', 
       description: 'Auto-categorize with smart tags',
       icon: <Hash className="w-5 h-5" />, 
-      gradient: "from-indigo-500 to-violet-500 shadow-indigo-500/20",
+      tint: "#e7e0f6",
       handler: () => handleAI('tags', "Suggesting Tags...", () => aiService.generateTags(content)) 
     },
     { 
@@ -154,7 +153,7 @@ export default function AIActions({ content, original, onUpdate, onPreviewChange
       label: 'Professional Polish', 
       description: 'Elevate the tone of your writing',
       icon: <RefreshCw className="w-5 h-5" />, 
-      gradient: "from-emerald-400 to-teal-500 shadow-emerald-500/20",
+      tint: "#d4f0dc",
       handler: () => handleAI('professional', "Rewriting...", () => aiService.rewrite(content, 'professional')) 
     },
     { 
@@ -162,15 +161,15 @@ export default function AIActions({ content, original, onUpdate, onPreviewChange
       label: 'Extract Tasks', 
       description: 'Turn your notes into action items',
       icon: <CheckSquare className="w-5 h-5" />, 
-      gradient: "from-rose-500 to-red-400 shadow-rose-500/20",
+      tint: "#f9e4cf",
       handler: () => handleAI('tasks', "Extracting Tasks...", () => aiService.extractTasks(content)) 
     },
     { 
       id: 'format', 
-      label: 'Deep Cleanup', 
+      label: 'Clean Up Formatting', 
       description: 'Fix formatting and structure',
       icon: <Zap className="w-5 h-5" />, 
-      gradient: "from-amber-400 to-orange-500 shadow-amber-500/20",
+      tint: "#fbecc0",
       handler: () => handleAI('format', "Formatting...", () => aiService.format(content)) 
     },
   ];
@@ -191,14 +190,14 @@ export default function AIActions({ content, original, onUpdate, onPreviewChange
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full relative">
+    <div className="flex-1 flex flex-col h-full min-h-0 relative">
       <AnimatePresence>
         {isLoading && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 z-50 bg-white/60 dark:bg-stone-900/60 backdrop-blur-xl flex items-center justify-center rounded-3xl"
+            className="absolute inset-0 z-50 bg-[var(--surface)]/90 backdrop-blur-sm flex items-center justify-center rounded-3xl"
           >
             <AILoading message={loadingMsg} />
           </motion.div>
@@ -212,36 +211,30 @@ export default function AIActions({ content, original, onUpdate, onPreviewChange
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="flex-1 flex flex-col h-full"
+            className="flex-1 flex flex-col h-full min-h-0"
           >
-            <div className="flex items-center justify-between mb-6">
-              <button 
-                onClick={handleDiscard}
-                className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 transition-colors"
-              >
-                <ArrowLeft className="w-3 h-3" />
-                Back to Tools
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+              <button onClick={handleDiscard} className="btn-ghost pl-2 text-[var(--muted)]">
+                <ArrowLeft className="w-4 h-4" />
+                Back to tools
               </button>
-              
+
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={handleDiscard}
-                  className="flex items-center gap-2 px-4 py-2 bg-stone-100 dark:bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest text-stone-500 hover:bg-stone-200 dark:hover:bg-white/10 transition-all"
+                  className="inline-flex items-center gap-2 rounded-full border-[1.5px] border-[var(--border)] px-4 py-2.5 text-sm font-medium transition-all hover:border-[var(--accent)] active:scale-95"
                 >
-                  <RotateCcw className="w-3 h-3" />
+                  <RotateCcw className="w-4 h-4" />
                   Discard
                 </button>
-                <button 
-                  onClick={handleApply}
-                  className="flex items-center gap-2 px-6 py-2 bg-[var(--accent)] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-[var(--accent)]/20 hover:scale-105 active:scale-95 transition-all"
-                >
-                  <Check className="w-3 h-3" />
-                  Apply Changes
+                <button onClick={handleApply} className="btn-pill px-5 py-2.5">
+                  <Check className="w-4 h-4" />
+                  Apply
                 </button>
               </div>
             </div>
 
-            <AIPreviewScreen 
+            <AIPreviewScreen
               action={activeAction || ''}
               original={original}
               result={previewResult}
@@ -253,27 +246,17 @@ export default function AIActions({ content, original, onUpdate, onPreviewChange
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 20 }}
-            className="flex-1 flex flex-col h-full"
+            className="flex-1 flex flex-col h-full min-h-0"
           >
-            <div className="mb-8 space-y-2">
-              <div className="flex items-center gap-2">
-                 <div className="p-2 bg-[var(--neon-purple)]/10 rounded-xl">
-                    <Sparkles className="w-5 h-5 text-[var(--neon-purple)]" />
-                 </div>
-                 <span className="text-xs font-black uppercase tracking-widest text-stone-500 dark:text-stone-400">
-                   Note Studio AI
-                 </span>
-              </div>
-              <p className="text-stone-400 dark:text-stone-500 text-[10px] font-bold uppercase tracking-widest leading-relaxed">
-                Enhance your thoughts with generative intelligence.
-              </p>
-            </div>
+            <p className="mb-6 text-sm leading-relaxed text-[var(--muted)]">
+              Pick a tool. You'll see a preview before anything changes.
+            </p>
 
-            <motion.div 
+            <motion.div
               variants={container}
               initial="hidden"
               animate="show"
-              className="flex flex-col gap-4 overflow-y-auto pr-2 scrollbar-hide"
+              className="flex flex-col gap-2 overflow-y-auto scrollbar-hide"
             >
               {actions.map((action) => (
                 <motion.button
@@ -281,31 +264,21 @@ export default function AIActions({ content, original, onUpdate, onPreviewChange
                   variants={item}
                   onClick={action.handler}
                   disabled={isLoading}
-                  className="group relative flex items-center gap-4 p-4 rounded-[24px] bg-white dark:bg-stone-900/40 border border-black/5 dark:border-white/5 hover:border-[var(--neon-purple)]/30 transition-all hover:shadow-xl hover:shadow-black/5 text-left disabled:opacity-50"
+                  className="group flex items-center gap-4 rounded-[22px] border-[1.5px] border-[var(--border)] p-3 pr-4 text-left transition-all hover:border-[var(--accent)] disabled:opacity-50"
                 >
-                  <div className={`shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br ${action.gradient} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform`}>
+                  <span
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[#0b3b3c] transition-transform group-hover:scale-105"
+                    style={{ background: action.tint }}
+                  >
                     {action.icon}
-                  </div>
-                  
-                  <div className="flex-1">
-                    <h4 className="text-[11px] font-black uppercase tracking-widest text-stone-700 dark:text-stone-200 mb-0.5">
-                      {action.label}
-                    </h4>
-                    <p className="text-[9px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-tight">
-                      {action.description}
-                    </p>
-                  </div>
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-medium">{action.label}</span>
+                    <span className="block text-xs text-[var(--muted)]">{action.description}</span>
+                  </span>
                 </motion.button>
               ))}
             </motion.div>
-            
-            <div className="mt-auto pt-8">
-              <div className="p-4 rounded-3xl bg-black/5 dark:bg-white/5 border border-dashed border-black/10 dark:border-white/10">
-                <p className="text-[9px] font-bold text-center text-stone-400 uppercase tracking-[0.2em]">
-                  Select an action to transform the current draft
-                </p>
-              </div>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
