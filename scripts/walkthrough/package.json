@@ -1,0 +1,13 @@
+{
+  "name": "aestheticnotes-walkthrough-recorder",
+  "private": true,
+  "type": "module",
+  "description": "Records the narrated 'how to use' video shown on the landing page.",
+  "scripts": {
+    "record": "node record.mjs"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "playwright": "^1.56.1"
+  }
+}

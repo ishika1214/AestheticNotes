@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
-import { Sun, Moon, Plus, ArrowRight, Menu, X } from "lucide-react";
+import { Sun, Moon, Plus, ArrowRight, Menu, X, Play } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "../lib/utils";
 import {
@@ -98,6 +98,7 @@ export default function Landing() {
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
 
   const navLinks = [
+    { label: "Watch demo", href: "#demo" },
     { label: "How it works", href: "#how" },
     { label: "Features", href: "#features" },
     { label: "FAQ", href: "#faq" },
@@ -188,12 +189,43 @@ export default function Landing() {
               Write notes, novels and diaries in one cozy space, with a gentle AI that helps you
               summarise, organise and remember.
             </p>
-            <button onClick={() => navigate("/auth")} className="btn-pill mt-10 px-8">
-              Get started
-            </button>
+            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <button onClick={() => navigate("/auth")} className="btn-pill px-8">
+                Get started
+              </button>
+              <a
+                href="#demo"
+                className="inline-flex items-center gap-2 rounded-full bg-white/70 px-6 py-3 text-sm font-medium transition-all hover:bg-white active:scale-95 dark:bg-white/10 dark:hover:bg-white/15"
+              >
+                <Play className="h-4 w-4 fill-current" /> Watch the 2-min tour
+              </a>
+            </div>
           </motion.div>
         </div>
       </header>
+
+      {/* VIDEO WALKTHROUGH */}
+      <section id="demo" className="mx-auto max-w-5xl scroll-mt-8 px-5 pt-24 sm:px-8 md:pt-32">
+        <div className="mb-10 text-center">
+          <p className="eyebrow mb-4">See it in action</p>
+          <h2 className="text-3xl font-semibold leading-tight tracking-tight sm:text-5xl">How to Use Aesthetic</h2>
+          <p className="mx-auto mt-4 max-w-md leading-relaxed text-[var(--muted)]">
+            A short guided tour of the real app, narrated by our AI voice. Turn on your sound.
+          </p>
+        </div>
+        <div className="overflow-hidden rounded-[32px] bg-[#0b3b3c] shadow-[0_30px_60px_-30px_rgba(11,59,60,0.45)]">
+          <video
+            className="aspect-video w-full"
+            src="/walkthrough/walkthrough.mp4"
+            poster="/walkthrough/poster.jpg"
+            controls
+            playsInline
+            preload="metadata"
+          >
+            Your browser can't play this video.
+          </video>
+        </div>
+      </section>
 
       {/* HOW IT WORKS */}
       <section id="how" className="mx-auto grid max-w-6xl scroll-mt-8 items-center gap-12 px-5 py-24 sm:px-8 md:grid-cols-2 md:py-32">

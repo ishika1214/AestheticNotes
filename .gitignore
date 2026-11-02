@@ -17,3 +17,6 @@ yarn-error.log*
 .vscode/
 .idea/
 .DS_Store
+# walkthrough recorder output
+scripts/walkthrough/.cache/
+scripts/walkthrough/record.log

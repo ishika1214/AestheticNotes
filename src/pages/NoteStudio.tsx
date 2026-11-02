@@ -411,7 +411,7 @@ export default function NoteStudio({ isNew = false }: NoteStudioProps) {
             </div>
 
             {/* EDITOR / BOOK */}
-            <div className={cn("flex-1 w-full", type !== 'note' && "pb-28")}>
+            <div className={cn("flex-1 w-full", type !== 'note' && "pb-10")}>
               {type === 'note' ? (
                 <RichTextEditor value={content} onChange={setContent} />
               ) : (

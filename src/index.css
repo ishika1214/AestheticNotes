@@ -146,9 +146,12 @@
 }
 }
 
-/* Subtle grain like the reference artwork */
-.grain {
-  position: relative;
+/* Subtle grain like the reference artwork.
+   Layered so position utilities (e.g. `absolute`) on the same element win. */
+@layer components {
+  .grain {
+    position: relative;
+  }
 }
 .grain::after {
   content: "";

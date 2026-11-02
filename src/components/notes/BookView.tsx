@@ -39,7 +39,7 @@ export default function BookView({
   const prevPage = () => onPageChange(Math.max(currentPage - 1, 0));
 
   return (
-    <div className="relative w-full mx-auto aspect-[3/4] sm:aspect-[4/5]">
+    <div className="relative w-full mx-auto aspect-[3/4] sm:aspect-[4/5] lg:aspect-[16/9]">
       {/* COVER */}
       <div className={cn(
         "grain absolute inset-0 rounded-[32px] shadow-[0_30px_60px_-30px_rgba(11,59,60,0.5)]",
@@ -76,7 +76,7 @@ export default function BookView({
       </div>
 
       {/* CONTROLS */}
-      <div className="absolute inset-x-0 -bottom-20 flex items-center justify-center gap-6">
+      <div className="absolute inset-x-0 -bottom-6 flex items-center justify-center gap-6">
         <button
           onClick={prevPage}
           disabled={currentPage === 0}

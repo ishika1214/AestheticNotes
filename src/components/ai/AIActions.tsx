@@ -31,6 +31,21 @@ interface AIActionsProps {
   onPreviewChange: (isExpanded: boolean) => void;
 }
 
+// The model sometimes returns list items as objects, e.g. { owner, task },
+// which React can't render. Flatten every item to plain text.
+function toTextList(items: unknown): string[] | undefined {
+  if (!Array.isArray(items)) return undefined;
+  return items.map((item) => {
+    if (typeof item === 'string') return item;
+    if (item && typeof item === 'object') {
+      const { owner, task, ...rest } = item as Record<string, unknown>;
+      if (task) return owner ? `${owner}: ${task}` : String(task);
+      return Object.values(rest).join(' — ');
+    }
+    return String(item);
+  });
+}
+
 export default function AIActions({ content, original, onUpdate, onPreviewChange }: AIActionsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState("");
@@ -59,6 +74,13 @@ export default function AIActions({ content, original, onUpdate, onPreviewChange
           } catch (e) {
             console.error("Frontend JSON recovery failed:", e);
           }
+        }
+        if (finalResult && typeof finalResult === 'object') {
+          finalResult = {
+            ...finalResult,
+            keyPoints: toTextList(finalResult.keyPoints),
+            actionItems: toTextList(finalResult.actionItems),
+          };
         }
         setPreviewResult(finalResult);
         setActiveAction(actionId);
